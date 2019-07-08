@@ -27,7 +27,7 @@ namespace TableOCR_0._2
         public FormScreenCapture fsc = null;
         const int borderLeft = 8;
         const int borderTop = 30;
-        private string path;
+        //private string path;
         public Image imgTabelaOriginal;
         private Image imgTabelaNonBinarized;
         private Image imgTabelaNoLines;
@@ -37,8 +37,8 @@ namespace TableOCR_0._2
         static CultureInfo ci = new CultureInfo("pt-BR");
         private int curHist;
         private int curUndoHist;
-        private bool curImg;
-        private bool original;
+        private bool curImgHasLines;
+        private bool showOriginalImage;
         private List<Tuple<Image, List<Tuple<Point, Point>>, List<Tuple<Point, Point>>>> hist = new List<Tuple<Image, List<Tuple<Point, Point>>, List<Tuple<Point, Point>>>>();
         private List<Tuple<Image, List<Tuple<Point, Point>>, List<Tuple<Point, Point>>>> undoHist = new List<Tuple<Image, List<Tuple<Point, Point>>, List<Tuple<Point, Point>>>>();
         private List<Tuple<Point, Point>> oldLines = new List<Tuple<Point, Point>>();
@@ -51,21 +51,31 @@ namespace TableOCR_0._2
         public SortedSet<int> yValues = new SortedSet<int>();
         List<List<Tuple<Point, Point, Point, Point>>> cells = new List<List<Tuple<Point, Point, Point, Point>>>();
 
+        //Form construction
+        //Sets initial values for some control variables
         public Form1()
         {
             InitializeComponent();
+
+            //Integers for traversing in the list of history
             curHist = 0;
             curUndoHist = 0;
+
+            //Variable to hold original size of the loaded image
             sizeOriginal = this.Size;
-            curImg = false;
-            original = true;
+
+            //Control variables to enable switching between images with or without filters or lines
+            curImgHasLines = false;
+            showOriginalImage = true;
         }
 
+        //Method called when the form is deactivated
         private void Form1_Deactivate(object sender, EventArgs e)
         {
             //this.Show();
         }
 
+        //Mehod called when the form is activated
         private void Form1_Activate(object sender, EventArgs e)
         {
             //if (!fsc.IsDisposed)
@@ -74,18 +84,21 @@ namespace TableOCR_0._2
             //}
         }
 
+        //Function to add the current state to the history list
         private void AddHist()
         {
             hist.Add(new Tuple<Image, List<Tuple<Point, Point>>, List<Tuple<Point, Point>>>((Image)imgTabelaLines.Clone(), new List<Tuple<Point, Point>>(oldLines), new List<Tuple<Point, Point>>(lines)));
             curHist++;
         }
 
+        //Function to add the current state to the undo-history list
         private void AddUndoHist()
         {
             undoHist.Add(new Tuple<Image, List<Tuple<Point, Point>>, List<Tuple<Point, Point>>>((Image)imgTabelaLines.Clone(), new List<Tuple<Point, Point>>(oldLines), new List<Tuple<Point, Point>>(lines)));
             curUndoHist++;
         }
 
+        //Function that finds all lines near a point, usually the point clicked
         private List<Tuple<Point, Point>> FindLinesNear(Point p)
         {
             int x, mx, y, my, y1, y2, x1, x2;
@@ -235,13 +248,22 @@ namespace TableOCR_0._2
             return ret;
         }
 
+        //Method called whenever the mouse is clicked
+        //It checks whether the point clicked has lines or segments, highlighting or de-highlighting them
         private void Form1_MouseDown(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left)
             {
+                //The coordinates of the point clicked on the image are set by subtracting the position
+                //of the form on the screen and the space between the border and the image from the position
+                //of the cursor when clicked
                 textBox1.Text = (Cursor.Position.X - this.Left - borderLeft) + ", " + (Cursor.Position.Y - this.Top - 80 - borderTop);
                 Point clicked = new Point(Cursor.Position.X - this.Left - borderLeft, Cursor.Position.Y - this.Top - 80 - borderTop);
+
+                //A list with the two poits that define each line within a 3 pixel range of the point clicked
                 List<Tuple<Point, Point>> nearLines = FindLinesNear(clicked);
+
+                //If there are any lines near the point clicked, they are colored accordingly
                 if (nearLines.Count > 0)
                 {
                     Pen bluePen = new Pen(Color.Blue, 3);
@@ -250,10 +272,14 @@ namespace TableOCR_0._2
                     {
                         if (removeLines.Add(t))
                         {
+                            //The line was not already in the hash with lines to be removed,
+                            //so it is colored for removal
                             gfxTabela.DrawLine(bluePen, t.Item1, t.Item2);
                         }
                         else
                         {
+                            //The line was already in the hash, so it is colored back to normal
+                            //and removed from the removal hash
                             gfxTabela.DrawLine(redPen, t.Item1, t.Item2);
                             removeLines.Remove(t);
                         }
@@ -263,33 +289,39 @@ namespace TableOCR_0._2
             }
         }
 
+        //Method called with Paint Event for drawing images on the form
+        //It checks whether it should draw the original image or the ones with or without lines
         private void Form1_Paint(object sender, PaintEventArgs e)
         {
-            if (original)
+            if (showOriginalImage)
             {
                 e.Graphics.DrawImage(this.imgTabelaOriginal, 0, 80);
             }
             else
             {
-                if (curImg)
+                if (curImgHasLines)
                     e.Graphics.DrawImage(this.imgTabelaLines, 0, 80);
                 else
                     e.Graphics.DrawImage(this.imgTabelaNoLines, 0, 80);
             }
         }
 
+        //Function used to call the Paint event, redrawing the image
         public void UpdatePainting()
         {
             this.Invalidate();
             this.Paint += new PaintEventHandler(this.Form1_Paint);
         }
 
+        //Funtion used to draw a line between two points on the image, given the x and y values of each point
         public void UpdateGfx(int x1, int x2, int y1, int y2)
         {
             Pen redPen = new Pen(Color.Red, 2);
             gfxTabela.DrawLine(redPen, x1, y1, x2, y2);
         }
 
+        //Function that loads the image
+        //It recieves an Image<Gray, Byte>, redimensions it and paints it on the form
         public void LoadImage(Image<Gray, Byte> img)
         {
             //int threshold = 50;
@@ -298,6 +330,7 @@ namespace TableOCR_0._2
             int width = imgTabelaOriginal.Size.Width;
             int height = imgTabelaOriginal.Size.Height;
 
+            //Adjusts the height and width to be proportional and having one of them equal the HD dimensions
             if (height > width)
             {
                 double ratio = (double)width / (double)height;
@@ -333,6 +366,8 @@ namespace TableOCR_0._2
             imgTabelaNonBinarized = imgTabelaOriginal;
         }
 
+        //Method called when the load file "Arquivo" button is clicked
+        //It opens the file and loads it on the form
         private void buttonArquivo_Click(object sender, EventArgs e)
         {
             OpenFileDialog ofd = new OpenFileDialog();
@@ -341,12 +376,13 @@ namespace TableOCR_0._2
             //ofd.InitialDirectory = "";
             if (ofd.ShowDialog() == DialogResult.OK)
             {
-                path = ofd.FileName;
+                //path = ofd.FileName;
                 LoadImage(new Image<Gray, Byte>(ofd.FileName));
                 //LoadImage(Image.FromFile(path));
             }
         }
 
+        //Function that draws each point on the matrix of line intersections used for the OCR to the image
         private void DrawTessIntersections()
         {
             Pen pen = new Pen(Color.Green, 4);
@@ -359,35 +395,19 @@ namespace TableOCR_0._2
             }
         }
 
+        //Initial line intersection drawing function
+        //It draws a point on the image for each line intersection on the intersections list
         private void DrawIntersections()
         {
             Pen pen = new Pen(Color.Yellow, 4);
-            const string txtPath1 = @"C:\Users\Henrique\Documents\Visual Studio 2017\Projetos\TableOCR\out1.txt";
-            const string txtPath2 = @"C:\Users\Henrique\Documents\Visual Studio 2017\Projetos\TableOCR\out2.txt";
-            FileStream fs1 = File.Create(txtPath1);
-            FileStream fs2 = File.Create(txtPath2);
             foreach (Point p in intersections)
             {
-                Byte[] info = System.Text.Encoding.GetEncoding(ci.TextInfo.ANSICodePage).GetBytes(p.X + ", " + p.Y);
-                fs1.Write(info, 0, info.Length);
-                Byte[] emptyLine = System.Text.Encoding.GetEncoding(ci.TextInfo.ANSICodePage).GetBytes(Environment.NewLine);
-                fs1.Write(emptyLine, 0, emptyLine.Length);
                 gfxTabela.DrawLine(pen, p.X - 2, p.Y, p.X + 2, p.Y);
             }
-            foreach (List<Point> line in intersectionMatrix)
-            {
-                foreach (Point p in line)
-                {
-                    Byte[] info = System.Text.Encoding.GetEncoding(ci.TextInfo.ANSICodePage).GetBytes("(" + p.X + ", " + p.Y + ")" + ", ");
-                    fs2.Write(info, 0, info.Length);
-                }
-                Byte[] emptyLine = System.Text.Encoding.GetEncoding(ci.TextInfo.ANSICodePage).GetBytes(Environment.NewLine);
-                fs2.Write(emptyLine, 0, emptyLine.Length);
-            }
-            fs1.Close();
-            fs2.Close();
         }
 
+        //Function used for debugging
+        //It prints the coordinates of each point in the line intersection matrix
         private void PrintIntersectionMatrix()
         {
             foreach (List<Point> l in intersectionMatrix)
@@ -400,6 +420,8 @@ namespace TableOCR_0._2
             }
         }
 
+        //Function used for debugging
+        //It prints the coordinates of each point in the OCR line intersection matrix
         private void PrintTessIntersectionMatrix()
         {
             foreach (List<Point> l in tessIntersectionMatrix)
@@ -412,52 +434,53 @@ namespace TableOCR_0._2
             }
         }
 
+        //Function that generates a matrix of all line intersections from the list of intersections
         private void GetIntersectionMatrix()
         {
+            //First, the intersections list is sorted by (x,y) values
             IEnumerable<Point> sortedIntX = intersections.OrderBy(p => p.X);    //otimizavel? lambda mais complexo
             IEnumerable<Point> sortedIntersections = sortedIntX.OrderBy(p => p.Y);
+            //Then each of the x and y values are added to a corresponding SortedSet
             foreach (Point p in sortedIntersections)
             {
                 xValues.Add(p.X);
                 yValues.Add(p.Y);
             }
 
+            //Finally, the matrix is created, having a line with all y values for each x value
             foreach (int x in xValues)
             {
                 intersectionMatrix.Add(new List<Point>());
-                //tessIntersectionMatrix.Add(new List<Point>());
                 foreach (int y in yValues)
                 {
                     intersectionMatrix.Last<List<Point>>().Add(new Point(x, y));
-                    //tessIntersectionMatrix.Last<List<Point>>().Add(new Point(x, y));
                     //Debug.Print(x + ", " + y);
                 }
             }
 
+
+            //Additionally, a new list of lines is created, containing the segments between each intersection
+            //That way, it is possible to select only the segments of each cell on the table
             int i, j;
             for (i = 0; i < intersectionMatrix.Count - 1; i++)
             {
                 for (j = 0; j < intersectionMatrix[i].Count - 1; j++)
                 {
-                    if (i % 2 == 0 && j % 2 == 0)
-                    {
-                        lines.Add(new Tuple<Point, Point>(intersectionMatrix[i][j], intersectionMatrix[i][j + 1]));
-                        lines.Add(new Tuple<Point, Point>(intersectionMatrix[i][j], intersectionMatrix[i + 1][j]));
-                    }
-                    else if (i % 2 != 0 && j % 2 != 0)
-                    {
-                        lines.Add(new Tuple<Point, Point>(intersectionMatrix[i - 1][j], intersectionMatrix[i][j]));
-                        lines.Add(new Tuple<Point, Point>(intersectionMatrix[i][j - 1], intersectionMatrix[i][j]));
-                    }
+                    lines.Add(new Tuple<Point, Point>(intersectionMatrix[i][j], intersectionMatrix[i][j + 1]));
+                    lines.Add(new Tuple<Point, Point>(intersectionMatrix[i][j], intersectionMatrix[i + 1][j]));
+                    lines.Add(new Tuple<Point, Point>(intersectionMatrix[i][j + 1], intersectionMatrix[i + 1][j + 1]));
+                    lines.Add(new Tuple<Point, Point>(intersectionMatrix[i + 1][j], intersectionMatrix[i + 1][j + 1]));
                 }
             }
         }
 
+        //Function that creates a list of all the points where the original lines generated by the HoughTransform intersect
         public void GetIntersections()
         {
             int i, j;
             double m_l1, m_l2;
             Point intersect;
+            //It compares each line with all others, checking the angle of the pairs
             for (i = 0; i < oldLines.Count; i++)
             {
                 for (j = 0; j < oldLines.Count; j++)
@@ -473,6 +496,8 @@ namespace TableOCR_0._2
                         else
                             m_l2 = -1;
 
+                        //When it finds a pair that has lines with different angles, which means
+                        //that one is vertical and the other is horizontal, it adds the point where they intersect
                         if (m_l1 != m_l2)
                         {
                             intersect = new Point();
@@ -495,12 +520,17 @@ namespace TableOCR_0._2
             DrawIntersections();
         }
 
+        //Method called when the button for showing or omiting the lines "Linhas" is clicked
         private void buttonLinhas_Click(object sender, EventArgs e)
         {
-            curImg = !curImg;
+            curImgHasLines = !curImgHasLines;
             UpdatePainting();
         }
 
+        //Method called when the button for applying the filter given the tolerance "Filtro" is clicked
+        //It first runs an algorithm for edge detection on the binarized image,
+        //Then it invokes the HoughTransform to find the lines on the result image
+        //And finally it draws the lines found and updates the data structures used
         private void buttonFiltro_Click(object sender, EventArgs e)
         {
             if (fsc != null)
@@ -516,6 +546,7 @@ namespace TableOCR_0._2
             //int t1 = Int32.Parse(textBoxT1.Text);
             //int t2 = Int32.Parse(textBoxT2.Text);
 
+            //It first runs an algorithm for edge detection on the binarized image,
             CvInvoke.Canny(src, dst, 200, 300, 3);
             src.Dispose();
 
@@ -531,15 +562,17 @@ namespace TableOCR_0._2
                 xValues.Clear();
                 yValues.Clear();
 
+                //Then it invokes the HoughTransform to find the lines on the result image
                 var linhas = new VectorOfPointF();
                 CvInvoke.HoughLines(dst, linhas, 1, Math.PI / 180, tolerancia, 0, 0);
 
                 imgTabelaNoLines = dst.ToImage<Bgr, Byte>().ToBitmap();
                 imgTabelaLines = dst.ToImage<Bgr, Byte>().ToBitmap();
                 gfxTabela = System.Drawing.Graphics.FromImage(imgTabelaLines);
-                original = false;
+                showOriginalImage = false;
                 //UpdatePainting();
 
+                //And finally it draws the lines found and updates the data structures used
                 for (int i = 0; i < linhas.Size; i++)
                 {
                     float rho = linhas[i].X, theta = linhas[i].Y;
@@ -563,25 +596,24 @@ namespace TableOCR_0._2
             }
         }
 
+        //Function that removes the given point from the matrix of line intersections used for the OCR
         private void RemoveFromTessIntersectionMatrix(Point rmv)
         {
-            int i = 0, j;
-            foreach (List<Point> l in tessIntersectionMatrix)
+            for (int i = 0; i < tessIntersectionMatrix.Count; i++)
             {
-                j = 0;
-                foreach (Point p in l)
+                for (int j = 0; j < tessIntersectionMatrix[i].Count; j++)
                 {
-                    if (p.Equals(rmv))
+                    if (tessIntersectionMatrix[i][j].Equals(rmv))
                     {
                         tessIntersectionMatrix[i].RemoveAt(j);
                         return;
                     }
-                    j++;
                 }
-                i++;
             }
         }
 
+        //Function that returns whether or not the matrix of line intersections
+        //used for the OCR contains the given point
         private bool TessIntersectionMatrixContains(Point p_check)
         {
             foreach (List<Point> ls in tessIntersectionMatrix)
@@ -601,19 +633,24 @@ namespace TableOCR_0._2
             return false;
         }
 
+        //Function that adds the given point on the matrix of line intersections used for the OCR
         private void AddToTessIntersectionMatrix(Point p_add)
         {
             Debug.Print("(" + p_add.X + ", " + p_add.Y + ")");
+            //Checks if the point already exists on the matrix
             if (TessIntersectionMatrixContains(p_add))
             {
                 return;
             }
 
+            //Creates initial line if the matrix is empty
             if (tessIntersectionMatrix.Count == 0)
             {
                 tessIntersectionMatrix.Add(new List<Point>());
             }
 
+            //Creates a new line if the matrix's last line isn't empty and the y value of the
+            //point being added is greater than the ones on the last current line
             if (tessIntersectionMatrix.Last().Count > 0 && p_add.Y > tessIntersectionMatrix.Last()[0].Y)
             {
                 tessIntersectionMatrix.Add(new List<Point>());
@@ -621,6 +658,7 @@ namespace TableOCR_0._2
 
             for (int j = 0; j < tessIntersectionMatrix.Count; j++)
             {
+                //If an empty line is found the point is added to it
                 if (tessIntersectionMatrix[j].Count == 0)
                 {
                     tessIntersectionMatrix[j].Add(p_add);
@@ -628,6 +666,8 @@ namespace TableOCR_0._2
                 }
                 else
                 {
+                    //If the point being added has the same y value as a line,
+                    //the x value is used to find where on the line it should be inserted
                     if (tessIntersectionMatrix[j][0].Y == p_add.Y)
                     {
                         int i = 0;
@@ -643,6 +683,8 @@ namespace TableOCR_0._2
                         tessIntersectionMatrix[j].Add(p_add);
                         return;
                     }
+                    //If there is a line with y values greater than the point being added,
+                    //A new line must be inserted before it and the point added to it
                     else if (tessIntersectionMatrix[j][0].Y > p_add.Y)
                     {
                         tessIntersectionMatrix.Insert(j, new List<Point>());
@@ -657,6 +699,7 @@ namespace TableOCR_0._2
             }
         }
 
+        //Funtion that returns whether or not a given point was removed, that is, is in the remove list
         private bool PointWasRemoved(Point p_check)
         {
             foreach (Tuple<Point, Point> t in removeLines)
@@ -673,62 +716,87 @@ namespace TableOCR_0._2
             return false;
         }
 
+        //Method called when the button for removing the selected lines "Remover" is clicked
+        //It removes from the list of lines or segments each one that is in the remove list
         private void buttonRemove_Click(object sender, EventArgs e)
         {
-            //if (removeLines.Count != 0)
-            //{
-                imgTabelaLines = (Image)imgTabelaNoLines.Clone();
-                gfxTabela = System.Drawing.Graphics.FromImage(imgTabelaLines);
-                if (checkBoxLinha.Checked)
+            bool p1WasRemoved, p2WasRemoved;
+            //Resets table image
+            imgTabelaLines = (Image)imgTabelaNoLines.Clone();
+            gfxTabela = System.Drawing.Graphics.FromImage(imgTabelaLines);
+
+            //If the removal is being done with entire lines
+            if (checkBoxLinha.Checked)
+            {
+                //Goes through each line in removal list, removing them from the lines list
+                //and each point that constituted it from the OCR points matrix
+                foreach (Tuple<Point, Point> t in removeLines)
                 {
-                    foreach (Tuple<Point, Point> t in removeLines)
-                    {
-                        oldLines.Remove(t);
-                        //RemoveFromTessIntersectionMatrix(t.Item1);
-                        //RemoveFromTessIntersectionMatrix(t.Item2);
-                    }
-                    foreach (Tuple<Point, Point> t in oldLines)
+                    oldLines.Remove(t);
+                    RemoveFromTessIntersectionMatrix(t.Item1);
+                    RemoveFromTessIntersectionMatrix(t.Item2);
+                }
+                //Updates the lines drawn, excluding the ones that were removed
+                foreach (Tuple<Point, Point> t in oldLines)
+                {
+                    p1WasRemoved = PointWasRemoved(t.Item1);
+                    p2WasRemoved = PointWasRemoved(t.Item2);
+                    
+                    if (!p1WasRemoved)
                     {
                         UpdateGfx(t.Item1.X, t.Item2.X, t.Item1.Y, t.Item2.Y);
                         AddToTessIntersectionMatrix(t.Item1);
+                    }
+                    if (!p2WasRemoved)
+                    {
+                        UpdateGfx(t.Item1.X, t.Item2.X, t.Item1.Y, t.Item2.Y);
                         AddToTessIntersectionMatrix(t.Item2);
                     }
                 }
-                else
+            }
+            //If removal is being done with line segments
+            else
+            {
+                //Goes through each line in removal list, removing them from the lines list
+                //and each point that constituted it from the OCR points matrix
+                foreach (Tuple<Point, Point> t in removeLines)
                 {
-                    foreach (Tuple<Point, Point> t in removeLines)
-                    {
-                        lines.Remove(t);
-                        //RemoveFromTessIntersectionMatrix(t.Item1);
-                        //RemoveFromTessIntersectionMatrix(t.Item2);
-                    }
-                    foreach (Tuple<Point, Point> t in lines)
+                    lines.Remove(t);
+                    RemoveFromTessIntersectionMatrix(t.Item1);
+                    RemoveFromTessIntersectionMatrix(t.Item2);
+                }
+                //Updates the lines drawn, excluding the ones that were removed
+                foreach (Tuple<Point, Point> t in lines)
+                {
+                    p1WasRemoved = PointWasRemoved(t.Item1);
+                    p2WasRemoved = PointWasRemoved(t.Item2);
+
+                    if (!p1WasRemoved)
                     {
                         UpdateGfx(t.Item1.X, t.Item2.X, t.Item1.Y, t.Item2.Y);
-                        if (!PointWasRemoved(t.Item1))
-                        {
-                            AddToTessIntersectionMatrix(t.Item1);
-                        }
-                        if (!PointWasRemoved(t.Item2))
-                        {
-                            AddToTessIntersectionMatrix(t.Item2);
-                        }
+                        AddToTessIntersectionMatrix(t.Item1);
+                    }
+                    if (!p2WasRemoved)
+                    {
+                        UpdateGfx(t.Item1.X, t.Item2.X, t.Item1.Y, t.Item2.Y);
+                        AddToTessIntersectionMatrix(t.Item2);
                     }
                 }
-                removeLines.Clear();
+            }
+            removeLines.Clear();
 
-                DrawIntersections();
-                DrawTessIntersections();
-                UpdatePainting();
-                AddHist();
-                undoHist.Clear();
-                curUndoHist = 0;
-            //}
-            //PrintIntersectionMatrix();
+            DrawIntersections();
+            DrawTessIntersections();
+            UpdatePainting();
+            AddHist();
+            undoHist.Clear();
+            curUndoHist = 0;
+
             Debug.Print("AQUI:");
             PrintTessIntersectionMatrix();
         }
 
+        //Attempt at adding a undo-redo system
         private void buttonUndo_Click(object sender, EventArgs e)
         {
             if (curHist != 0)
@@ -745,6 +813,7 @@ namespace TableOCR_0._2
             }
         }
 
+        //Attempt at adding a undo-redo system
         private void buttonRedo_Click(object sender, EventArgs e)
         {
             if (curUndoHist != 0)
@@ -761,6 +830,7 @@ namespace TableOCR_0._2
             }
         }
 
+        //Function that converts a System.Drawing.Image to an Emgu.CV.Image<Bgra, byte>
         private Mat GetMatFromSDImage(System.Drawing.Image image)
         {
             int stride = 0;
@@ -786,21 +856,8 @@ namespace TableOCR_0._2
             return cvImage.Mat;
         }
 
-        private bool[,] InvertMatrix(bool[,] matrix, int rows, int cols)
-        {
-            bool[,] ret = new bool[cols, rows];
-
-            for (int i = 0; i < cols; i++)
-            {
-                for (int j = 0; j < rows; j++)
-                {
-                    ret[i, j] = matrix[j, i];
-                }
-            }
-
-            return ret;
-        }
-
+        //Function that, given an Image and the values for width and height,
+        //return the equivalent image with the input dimensions
         private Bitmap ResizeImage(Image image, int width, int height)
         {
             var destRect = new Rectangle(0, 0, width, height);
@@ -826,6 +883,7 @@ namespace TableOCR_0._2
             return destImage;
         }
 
+        //Function used to implement the CvInvoke.FindContours method
         public VectorOfVectorOfPoint FindContours(Image<Gray, byte> image, ChainApproxMethod method = ChainApproxMethod.ChainApproxSimple, RetrType type = RetrType.List)
         {
             // Check that all parameters are valid.
@@ -840,6 +898,8 @@ namespace TableOCR_0._2
             return result;
         }
 
+        //Function for debugging that prints the coordinates of each point in each tuple
+        //of four point in the cells structure
         private void PrintCells()
         {
             foreach (List<Tuple<Point, Point, Point, Point>> ls in cells)
@@ -853,6 +913,10 @@ namespace TableOCR_0._2
             }
         }
 
+        //Funtion that, given the starting line and two points, goes through the lines
+        //on the matrix with points for OCR, searching for the two "matching" points in it,
+        //that is, the two points in the same line, with the same Y value that is greater than
+        //the one on the points given and that have matching X values with the ones given
         private Tuple<Point, Point> FindMatchingPoints(int startingLine, Point p1, Point p2)
         {
             Point p3 = new Point(-1, -1);
@@ -862,13 +926,14 @@ namespace TableOCR_0._2
             {
                 for (int j = 0; j < tessIntersectionMatrix[i].Count - 1; j++)
                 {
+                    //Tests the two current points with the ones given
                     Point t1 = tessIntersectionMatrix[i][j];
                     Point t2 = tessIntersectionMatrix[i][j + 1];
                     if (!t1.Equals(p1) && !t2.Equals(p2) && t1.Y == t2.Y && p1.X == t1.X && p2.X == t2.X && t1.Y > p1.Y) //talvez não precise de checar tanta coisa
                     {
                         p3 = t1;
                         p4 = t2;
-
+                        //If a match is found, simply return it
                         return new Tuple<Point, Point>(p3, p4);
                     }
                 }
@@ -877,15 +942,19 @@ namespace TableOCR_0._2
             return new Tuple<Point, Point>(p3, p4);
         }
 
+        //Function that makes each line in the cells structure have the same amount of items
+        //by detecting differences in two consecutive lines' sizes and filling with invalid ones
         private void FillCellHoles()
         {
             for (int i = 1; i < cells.Count; i++)
             {
+                //Detects difference in line size
                 if (cells[i].Count < cells[i - 1].Count)
                 {
                     int firstCnt = cells[i].Count;
                     for (int j = 0; j < firstCnt; j++)
                     {
+                        //Finds where there's a gap by comparing the x values of each line and fills it
                         if (cells[i][j].Item1.X > cells[i - 1][j].Item2.X)
                         {
                             Tuple<Point, Point, Point, Point> t = new Tuple<Point, Point, Point, Point>(new Point(-1, -1), new Point(-1, -1), new Point(-1, -1), new Point(-1, -1));
@@ -897,7 +966,10 @@ namespace TableOCR_0._2
             }
         }
 
-        private void ConstroiCells()
+        //Function that creates the cells structure, that is, a list of lists, representing a matrix
+        //in which each item is a tuple of four points, representing a square and ideally a cell
+        //on the table image
+        private void BuildCells()
         {
             for (int i = 0; i < tessIntersectionMatrix.Count - 1; i++)
             {
@@ -907,6 +979,8 @@ namespace TableOCR_0._2
                     Point p1 = tessIntersectionMatrix[i][j];
                     Point p2 = tessIntersectionMatrix[i][j + 1];
 
+                    //With a pair of points on the same line, finds the matching pair on susequent
+                    //lines and adds the 4-tuple to the current cells list
                     if (p1.Y == p2.Y)
                     {
                         Tuple<Point, Point> matchingPoints = FindMatchingPoints(i + 1, p1, p2);
@@ -924,17 +998,18 @@ namespace TableOCR_0._2
             FillCellHoles();
         }
 
+        //Method called when the button for applying the OCR "Tesseract" is clicked
+        //It will create the cells structure and go through it, trying to extract the content
+        //from the image in the region delimited by the cell and then write it on a CSV file
+        //which is openned once the whole process is finished
         private void buttonTesseract_Click(object sender, EventArgs e)
         {
-            //removeLines.Clear();
-            //buttonRemove_Click(this, new EventArgs());
-            //DrawTessIntersections();
-            //UpdatePainting();
+            removeLines.Clear();
+            buttonRemove_Click(this, new EventArgs());
 
             int i, j;
             bool skip = false;
-            //repensar maneira de criar estrutura cells
-            ConstroiCells();
+            BuildCells();
             PrintCells();
 
             string dataPath, language, inputFile;
@@ -974,9 +1049,17 @@ namespace TableOCR_0._2
                         {
                             roi.Height *= -1;
                         }
+                        if (roi.Height == 0)
+                        {
+                            roi.Height += 1;
+                        }
                         if (roi.Width < 0)
                         {
                             roi.Width *= -1;
+                        }
+                        if (roi.Width == 0)
+                        {
+                            roi.Width += 1;
                         }
 
                         Bitmap src = new Bitmap(imgTabelaOriginal);
@@ -1021,10 +1104,6 @@ namespace TableOCR_0._2
                             skip = true;
                         }
                     }
-                    //else
-                    //{
-                    //    MessageBox.Show("asfas");
-                    //}
 
                     if (!skip)
                     {
