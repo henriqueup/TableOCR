@@ -724,50 +724,45 @@ namespace TableOCR_0._2
             //Resets table image
             imgTabelaLines = (Image)imgTabelaNoLines.Clone();
             gfxTabela = System.Drawing.Graphics.FromImage(imgTabelaLines);
+            HashSet<Tuple<Point, Point>> linesToRedraw = new HashSet<Tuple<Point, Point>>();
 
             //If the removal is being done with entire lines
             if (checkBoxLinha.Checked)
             {
                 //Goes through each line in removal list, removing them from the lines list
                 //and each point that constituted it from the OCR points matrix
-                foreach (Tuple<Point, Point> t in removeLines)
+                foreach (Tuple<Point, Point> r in removeLines)
                 {
-                    oldLines.Remove(t);
-                    RemoveFromTessIntersectionMatrix(t.Item1);
-                    RemoveFromTessIntersectionMatrix(t.Item2);
-                }
-                //Updates the lines drawn, excluding the ones that were removed
-                foreach (Tuple<Point, Point> t in oldLines)
-                {
-                    p1WasRemoved = PointWasRemoved(t.Item1);
-                    p2WasRemoved = PointWasRemoved(t.Item2);
-                    
-                    if (!p1WasRemoved)
-                    {
-                        UpdateGfx(t.Item1.X, t.Item2.X, t.Item1.Y, t.Item2.Y);
-                        AddToTessIntersectionMatrix(t.Item1);
-                    }
-                    if (!p2WasRemoved)
-                    {
-                        UpdateGfx(t.Item1.X, t.Item2.X, t.Item1.Y, t.Item2.Y);
-                        AddToTessIntersectionMatrix(t.Item2);
-                    }
-                }
-                foreach (Tuple<Point, Point> t in lines)
-                {
-                    p1WasRemoved = PointWasRemoved(t.Item1);
-                    p2WasRemoved = PointWasRemoved(t.Item2);
+                    oldLines.Remove(r);
+                    RemoveFromTessIntersectionMatrix(r.Item1);
+                    RemoveFromTessIntersectionMatrix(r.Item2);
 
-                    if (!p1WasRemoved)
+                    foreach (Tuple<Point, Point> t in lines)
                     {
-                        UpdateGfx(t.Item1.X, t.Item2.X, t.Item1.Y, t.Item2.Y);
-                        AddToTessIntersectionMatrix(t.Item1);
+                        //If remove line is horizontal
+                        if (r.Item1.Y == r.Item2.Y)
+                        {
+                            //if line is horizontal, dont include points with the same Y value
+                            if (r.Item1.Y != t.Item1.Y && r.Item1.Y != t.Item2.Y)
+                            {
+                                linesToRedraw.Add(t);
+                            }
+                        }
+                        else
+                        {
+                            //if line is vertical, dont include points with the same X value
+                            if (r.Item1.X != t.Item1.X && r.Item1.X != t.Item2.X)
+                            {
+                                linesToRedraw.Add(t);
+                            }
+                        }
                     }
-                    if (!p2WasRemoved)
-                    {
-                        UpdateGfx(t.Item1.X, t.Item2.X, t.Item1.Y, t.Item2.Y);
-                        AddToTessIntersectionMatrix(t.Item2);
-                    }
+                }
+                foreach (Tuple<Point, Point> t in linesToRedraw)
+                {
+                    UpdateGfx(t.Item1.X, t.Item2.X, t.Item1.Y, t.Item2.Y);
+                    AddToTessIntersectionMatrix(t.Item1);
+                    AddToTessIntersectionMatrix(t.Item2);
                 }
             }
             //If removal is being done with line segments
@@ -1020,6 +1015,20 @@ namespace TableOCR_0._2
         //which is openned once the whole process is finished
         private void buttonTesseract_Click(object sender, EventArgs e)
         {
+            const string dir = @"R:\TabelaOCR\";
+            string txtPath = dir + "out.csv";
+
+            try
+            {
+                using (FileStream fs = File.Create(txtPath)) { }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + Environment.NewLine + Environment.NewLine + "Sugestion: close the previous out.csv file.", "Error");
+                return;
+            }
+            MessageBox.Show("Starting OCR.", "Warning");
+
             removeLines.Clear();
             buttonRemove_Click(this, new EventArgs());
 
@@ -1029,7 +1038,6 @@ namespace TableOCR_0._2
             PrintCells();
 
             string dataPath, language, inputFile;
-            const string dir = @"R:\TabelaOCR\";
             dataPath = @"C:\Tesseract\tesseract-ocr\tessdata";
             language = "eng";
             OcrEngineMode oem = OcrEngineMode.DEFAULT;
@@ -1131,8 +1139,6 @@ namespace TableOCR_0._2
 
                 i++;
             }
-
-            string txtPath = dir + "out.csv";
 
             using (FileStream fs = File.Create(txtPath))
             {
