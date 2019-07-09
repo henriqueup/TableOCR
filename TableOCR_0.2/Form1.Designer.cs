@@ -40,20 +40,17 @@
             this.buttonFiltro = new System.Windows.Forms.Button();
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.buttonCapturar = new System.Windows.Forms.Button();
-            this.textBoxT1 = new System.Windows.Forms.TextBox();
-            this.textBoxT2 = new System.Windows.Forms.TextBox();
             this.buttonBinarizar = new System.Windows.Forms.Button();
-            this.label2 = new System.Windows.Forms.Label();
-            this.textBoxToleranciaBinaria = new System.Windows.Forms.TextBox();
+            this.buttonResetar = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // buttonArquivo
             // 
-            this.buttonArquivo.Location = new System.Drawing.Point(87, 41);
+            this.buttonArquivo.Location = new System.Drawing.Point(98, 41);
             this.buttonArquivo.Name = "buttonArquivo";
-            this.buttonArquivo.Size = new System.Drawing.Size(75, 23);
+            this.buttonArquivo.Size = new System.Drawing.Size(150, 23);
             this.buttonArquivo.TabIndex = 0;
-            this.buttonArquivo.Text = "Arquivo";
+            this.buttonArquivo.Text = "Carregar Arquivo";
             this.buttonArquivo.UseVisualStyleBackColor = true;
             this.buttonArquivo.Click += new System.EventHandler(this.buttonArquivo_Click);
             // 
@@ -109,7 +106,7 @@
             // 
             // buttonTesseract
             // 
-            this.buttonTesseract.Location = new System.Drawing.Point(12, 41);
+            this.buttonTesseract.Location = new System.Drawing.Point(254, 40);
             this.buttonTesseract.Name = "buttonTesseract";
             this.buttonTesseract.Size = new System.Drawing.Size(75, 23);
             this.buttonTesseract.TabIndex = 11;
@@ -152,7 +149,7 @@
             // 
             // buttonCapturar
             // 
-            this.buttonCapturar.Location = new System.Drawing.Point(12, 12);
+            this.buttonCapturar.Location = new System.Drawing.Point(98, 12);
             this.buttonCapturar.Name = "buttonCapturar";
             this.buttonCapturar.Size = new System.Drawing.Size(150, 23);
             this.buttonCapturar.TabIndex = 16;
@@ -160,23 +157,9 @@
             this.buttonCapturar.UseVisualStyleBackColor = true;
             this.buttonCapturar.Click += new System.EventHandler(this.buttonCapturar_Click);
             // 
-            // textBoxT1
-            // 
-            this.textBoxT1.Location = new System.Drawing.Point(175, 14);
-            this.textBoxT1.Name = "textBoxT1";
-            this.textBoxT1.Size = new System.Drawing.Size(35, 20);
-            this.textBoxT1.TabIndex = 17;
-            // 
-            // textBoxT2
-            // 
-            this.textBoxT2.Location = new System.Drawing.Point(175, 40);
-            this.textBoxT2.Name = "textBoxT2";
-            this.textBoxT2.Size = new System.Drawing.Size(35, 20);
-            this.textBoxT2.TabIndex = 18;
-            // 
             // buttonBinarizar
             // 
-            this.buttonBinarizar.Location = new System.Drawing.Point(282, 41);
+            this.buttonBinarizar.Location = new System.Drawing.Point(254, 12);
             this.buttonBinarizar.Name = "buttonBinarizar";
             this.buttonBinarizar.Size = new System.Drawing.Size(75, 23);
             this.buttonBinarizar.TabIndex = 19;
@@ -184,32 +167,23 @@
             this.buttonBinarizar.UseVisualStyleBackColor = true;
             this.buttonBinarizar.Click += new System.EventHandler(this.buttonBinarizar_Click);
             // 
-            // label2
+            // buttonResetar
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(216, 17);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(60, 13);
-            this.label2.TabIndex = 21;
-            this.label2.Text = "Tolerância:";
-            // 
-            // textBoxToleranciaBinaria
-            // 
-            this.textBoxToleranciaBinaria.Location = new System.Drawing.Point(282, 14);
-            this.textBoxToleranciaBinaria.Name = "textBoxToleranciaBinaria";
-            this.textBoxToleranciaBinaria.Size = new System.Drawing.Size(57, 20);
-            this.textBoxToleranciaBinaria.TabIndex = 20;
+            this.buttonResetar.Location = new System.Drawing.Point(12, 12);
+            this.buttonResetar.Name = "buttonResetar";
+            this.buttonResetar.Size = new System.Drawing.Size(75, 52);
+            this.buttonResetar.TabIndex = 20;
+            this.buttonResetar.Text = "Resetar";
+            this.buttonResetar.UseVisualStyleBackColor = true;
+            this.buttonResetar.Click += new System.EventHandler(this.buttonResetar_Click);
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(769, 156);
-            this.Controls.Add(this.label2);
-            this.Controls.Add(this.textBoxToleranciaBinaria);
+            this.Controls.Add(this.buttonResetar);
             this.Controls.Add(this.buttonBinarizar);
-            this.Controls.Add(this.textBoxT2);
-            this.Controls.Add(this.textBoxT1);
             this.Controls.Add(this.buttonCapturar);
             this.Controls.Add(this.textBox1);
             this.Controls.Add(this.buttonFiltro);
@@ -245,11 +219,8 @@
         private System.Windows.Forms.Button buttonFiltro;
         private System.Windows.Forms.TextBox textBox1;
         private System.Windows.Forms.Button buttonCapturar;
-        private System.Windows.Forms.TextBox textBoxT1;
-        private System.Windows.Forms.TextBox textBoxT2;
         private System.Windows.Forms.Button buttonBinarizar;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.TextBox textBoxToleranciaBinaria;
+        private System.Windows.Forms.Button buttonResetar;
     }
 }
 

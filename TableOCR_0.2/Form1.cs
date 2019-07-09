@@ -293,15 +293,15 @@ namespace TableOCR_0._2
         //It checks whether it should draw the original image or the ones with or without lines
         private void Form1_Paint(object sender, PaintEventArgs e)
         {
-            if (showOriginalImage)
+            if (showOriginalImage && imgTabelaOriginal != null)
             {
                 e.Graphics.DrawImage(this.imgTabelaOriginal, 0, 80);
             }
             else
             {
-                if (curImgHasLines)
+                if (curImgHasLines && imgTabelaLines != null)
                     e.Graphics.DrawImage(this.imgTabelaLines, 0, 80);
-                else
+                else if (imgTabelaNoLines != null)
                     e.Graphics.DrawImage(this.imgTabelaNoLines, 0, 80);
             }
         }
@@ -753,6 +753,22 @@ namespace TableOCR_0._2
                         AddToTessIntersectionMatrix(t.Item2);
                     }
                 }
+                foreach (Tuple<Point, Point> t in lines)
+                {
+                    p1WasRemoved = PointWasRemoved(t.Item1);
+                    p2WasRemoved = PointWasRemoved(t.Item2);
+
+                    if (!p1WasRemoved)
+                    {
+                        UpdateGfx(t.Item1.X, t.Item2.X, t.Item1.Y, t.Item2.Y);
+                        AddToTessIntersectionMatrix(t.Item1);
+                    }
+                    if (!p2WasRemoved)
+                    {
+                        UpdateGfx(t.Item1.X, t.Item2.X, t.Item1.Y, t.Item2.Y);
+                        AddToTessIntersectionMatrix(t.Item2);
+                    }
+                }
             }
             //If removal is being done with line segments
             else
@@ -1153,11 +1169,57 @@ namespace TableOCR_0._2
             }
         }
 
+        //Method called when the pre processing button "Binarizar" is clicked
+        //It performs some pre processing operations on the initial image,
+        //like noise reduction and binarization
         private void buttonBinarizar_Click(object sender, EventArgs e)
         {
-            int threshold = Int32.Parse(textBoxToleranciaBinaria.Text);
-            Image<Gray, Byte> img = new Image<Gray, byte>((Bitmap)imgTabelaNonBinarized);
-            imgTabelaOriginal = img.Convert<Gray, byte>().ThresholdBinary(new Gray(threshold), new Gray(255)).ToBitmap();
+            //int threshold = Int32.Parse(textBoxToleranciaBinaria.Text);
+            //Image<Gray, Byte> img = new Image<Gray, byte>((Bitmap)imgTabelaNonBinarized);
+            //imgTabelaOriginal = img.Convert<Gray, byte>().ThresholdBinary(new Gray(threshold), new Gray(255)).ToBitmap();
+            //UpdatePainting();
+
+            Image<Gray, Byte> src = new Image<Gray, byte>((Bitmap)imgTabelaNonBinarized);
+            Mat element = CvInvoke.GetStructuringElement(ElementShape.Rectangle, new Size(3, 3), new Point(-1, -1));
+
+            CvInvoke.Dilate(src, src, element, new Point(-1, -1), 1, BorderType.Constant, new MCvScalar(255, 255, 255));
+            CvInvoke.Erode(src, src, element, new Point(-1, -1), 1, BorderType.Constant, new MCvScalar(255, 255, 255));
+
+            CvInvoke.AdaptiveThreshold(src, src, 255, AdaptiveThresholdType.GaussianC, ThresholdType.Binary, 15, 2);
+
+            CvInvoke.Dilate(src, src, element, new Point(-1, -1), 1, BorderType.Constant, new MCvScalar(255, 255, 255));
+            CvInvoke.Erode(src, src, element, new Point(-1, -1), 1, BorderType.Constant, new MCvScalar(255, 255, 255));
+            imgTabelaOriginal = src.ToBitmap();
+            UpdatePainting();
+        }
+
+        //Method called when the reset button "Resetar" is clicked
+        //It resets everything, returning the application to its starting state
+        private void buttonResetar_Click(object sender, EventArgs e)
+        {
+            hist.Clear();
+            undoHist.Clear();
+            oldLines.Clear();
+            lines.Clear();
+            removeLines.Clear();
+            intersections.Clear();
+            intersectionMatrix.Clear();
+            tessIntersectionMatrix.Clear();
+            xValues.Clear();
+            yValues.Clear();
+            cells.Clear();
+
+            imgTabelaOriginal = null;
+            imgTabelaNonBinarized = null;
+            imgTabelaNoLines = null;
+            imgTabelaLines = null;
+
+            curHist = 0;
+            curUndoHist = 0;
+            this.Size = sizeOriginal;
+            curImgHasLines = false;
+            showOriginalImage = true;
+
             UpdatePainting();
         }
     }
