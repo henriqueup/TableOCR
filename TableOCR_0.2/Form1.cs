@@ -1009,6 +1009,53 @@ namespace TableOCR_0._2
             FillCellHoles();
         }
 
+        //Function that recieves the OCR results matrix and removes empty rows and columns
+        private void CleanUpMatrix(ref List<List<string>> matrix)
+        {
+            bool skip;
+
+            //removing empty rows
+            for (int i = 0; i < matrix.Count; i++)
+            {
+                skip = true;
+                for (int j = 0; j < matrix[i].Count; j++)
+                {
+                    if (matrix[i][j] != ".")
+                    {
+                        skip = false;
+                        break;
+                    }
+                }
+
+                if (skip)
+                {
+                    matrix.RemoveAt(i);
+                }
+            }
+
+            //removing empty columns
+            for (int j = 0; j < matrix[0].Count; j++)
+            {
+                skip = true;
+                for (int i = 0; i < matrix.Count; i++)
+                {
+                    if (matrix[i][j] != ".")
+                    {
+                        skip = false;
+                        break;
+                    }
+                }
+
+                if (skip)
+                {
+                    for (int i = 0; i < matrix.Count; i++)
+                    {
+                        matrix[i].RemoveAt(j);
+                    }
+                }
+            }
+        }
+
         //Method called when the button for applying the OCR "Tesseract" is clicked
         //It will create the cells structure and go through it, trying to extract the content
         //from the image in the region delimited by the cell and then write it on a CSV file
@@ -1069,63 +1116,54 @@ namespace TableOCR_0._2
                     {
                         skip = false;
                         Rectangle roi = new Rectangle(cell.Item1.X + 4, cell.Item1.Y + 4, cell.Item4.X - cell.Item1.X - 4, cell.Item4.Y - cell.Item1.Y - 4);
-                        if (roi.Height < 0)
-                        {
-                            roi.Height *= -1;
-                        }
-                        if (roi.Height == 0)
-                        {
-                            roi.Height += 1;
-                        }
-                        if (roi.Width < 0)
-                        {
-                            roi.Width *= -1;
-                        }
-                        if (roi.Width == 0)
-                        {
-                            roi.Width += 1;
-                        }
-
-                        Bitmap src = new Bitmap(imgTabelaOriginal);
-                        Bitmap dst = new Bitmap(roi.Width, roi.Height);
-                        using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(dst))
-                        {
-                            g.DrawImage(src, new Rectangle(0, 0, dst.Width, dst.Height), roi, GraphicsUnit.Pixel);
-                        }
-                        //dst = ResizeImage(dst, 1024, 720);
-                        dst.Save(dir + "cell_" + i + "," + j + ".jpg");
-
-                        VectorOfVectorOfPoint result = FindContours(new Image<Gray, Byte>(dst), ChainApproxMethod.ChainApproxSimple, RetrType.List);
-
-                        if (result == null || !(result.Size > 0))
+                        if (roi.Height <= 0 || roi.Width <= 0)
                         {
                             skip = true;
-                            Debug.Print("skip");
                         }
-                        src.Dispose();
-                        dst.Dispose();
 
-                        inputFile = dir + "cell_" + i + "," + j + ".jpg";
-                        Pix pix = tessBaseAPI.SetImage(inputFile);
-                        //File.Delete(dir + "cell" + i + ".png");
-
-                        tessBaseAPI.Recognize();
-
-                        ResultIterator resultIterator = tessBaseAPI.GetIterator();
-
-                        StringBuilder stringBuilder = new StringBuilder();
-                        PageIteratorLevel pageIteratorLevel = PageIteratorLevel.RIL_PARA;
-                        do
+                        if (!skip)
                         {
-                            stringBuilder.Append(resultIterator.GetUTF8Text(pageIteratorLevel));
-                        } while (resultIterator.Next(pageIteratorLevel));
+                            Bitmap src = new Bitmap(imgTabelaOriginal);
+                            Bitmap dst = new Bitmap(roi.Width, roi.Height);
+                            using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(dst))
+                            {
+                                g.DrawImage(src, new Rectangle(0, 0, dst.Width, dst.Height), roi, GraphicsUnit.Pixel);
+                            }
+                            //dst = ResizeImage(dst, 1024, 720);
+                            dst.Save(dir + "cell_" + i + "," + j + ".jpg");
 
-                        myString = stringBuilder.ToString();
+                            VectorOfVectorOfPoint result = FindContours(new Image<Gray, Byte>(dst), ChainApproxMethod.ChainApproxSimple, RetrType.List);
 
-                        myString = Regex.Replace(myString, @"\s+", " ", RegexOptions.Multiline);
-                        if (myString == "")
-                        {
-                            skip = true;
+                            if (result == null || !(result.Size > 0))
+                            {
+                                skip = true;
+                                Debug.Print("skip");
+                            }
+                            src.Dispose();
+                            dst.Dispose();
+
+                            inputFile = dir + "cell_" + i + "," + j + ".jpg";
+                            Pix pix = tessBaseAPI.SetImage(inputFile);
+                            //File.Delete(dir + "cell" + i + ".png");
+
+                            tessBaseAPI.Recognize();
+
+                            ResultIterator resultIterator = tessBaseAPI.GetIterator();
+
+                            StringBuilder stringBuilder = new StringBuilder();
+                            PageIteratorLevel pageIteratorLevel = PageIteratorLevel.RIL_PARA;
+                            do
+                            {
+                                stringBuilder.Append(resultIterator.GetUTF8Text(pageIteratorLevel));
+                            } while (resultIterator.Next(pageIteratorLevel));
+
+                            myString = stringBuilder.ToString();
+
+                            myString = Regex.Replace(myString, @"\s+", " ", RegexOptions.Multiline);
+                            if (myString == "")
+                            {
+                                skip = true;
+                            }
                         }
                     }
 
@@ -1142,6 +1180,8 @@ namespace TableOCR_0._2
 
             using (FileStream fs = File.Create(txtPath))
             {
+                CleanUpMatrix(ref matrix);
+
                 for (i = 0; i < matrix.Count; i++)
                 {
                     for (j = 0; j < matrix[i].Count; j++)
