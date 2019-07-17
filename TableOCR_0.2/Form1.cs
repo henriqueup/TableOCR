@@ -257,7 +257,7 @@ namespace TableOCR_0._2
                 //The coordinates of the point clicked on the image are set by subtracting the position
                 //of the form on the screen and the space between the border and the image from the position
                 //of the cursor when clicked
-                textBox1.Text = (Cursor.Position.X - this.Left - borderLeft) + ", " + (Cursor.Position.Y - this.Top - 80 - borderTop);
+                //textBox1.Text = (Cursor.Position.X - this.Left - borderLeft) + ", " + (Cursor.Position.Y - this.Top - 80 - borderTop);
                 Point clicked = new Point(Cursor.Position.X - this.Left - borderLeft, Cursor.Position.Y - this.Top - 80 - borderTop);
 
                 //A list with the two poits that define each line within a 3 pixel range of the point clicked
@@ -334,19 +334,19 @@ namespace TableOCR_0._2
             if (height > width)
             {
                 double ratio = (double)width / (double)height;
-                int targetHeight = 1080;
+                int targetHeight = Screen.PrimaryScreen.Bounds.Height - 100;
                 int targetWidth = Convert.ToInt32(ratio * targetHeight);
                 imgTabelaOriginal = ResizeImage(imgTabelaOriginal, targetWidth, targetHeight);
             }
             else
             {
                 double ratio = (double)height / (double)width;
-                int targetWidth = 1920;
+                int targetWidth = Screen.PrimaryScreen.Bounds.Width - 50;
                 int targetHeight = Convert.ToInt32(ratio * targetWidth);
                 imgTabelaOriginal = ResizeImage(imgTabelaOriginal, targetWidth, targetHeight);
             }
 
-            if (imgTabelaOriginal.Size.Width > sizeOriginal.Width)
+            if (imgTabelaOriginal.Size.Width + 20 > sizeOriginal.Width)
             {
                 this.Width = imgTabelaOriginal.Size.Width + 20;
             }
@@ -354,7 +354,7 @@ namespace TableOCR_0._2
             {
                 this.Width = sizeOriginal.Width;
             }
-            if (imgTabelaOriginal.Size.Height > sizeOriginal.Height)
+            if (imgTabelaOriginal.Size.Height + 123 > sizeOriginal.Height)
             {
                 this.Height = imgTabelaOriginal.Size.Height + 123;
             }
@@ -550,50 +550,49 @@ namespace TableOCR_0._2
             CvInvoke.Canny(src, dst, 200, 300, 3);
             src.Dispose();
 
-            int tolerancia;
-            if (Int32.TryParse(textBoxTolerancia.Text, out tolerancia))
+            int tolerancia = trackBarTolerancia.Value * 100;
+
+            lines.Clear();
+            oldLines.Clear();
+            intersections.Clear();
+            intersectionMatrix.Clear();
+            tessIntersectionMatrix.Clear();
+            removeLines.Clear();
+            xValues.Clear();
+            yValues.Clear();
+
+            //Then it invokes the HoughTransform to find the lines on the result image
+            var linhas = new VectorOfPointF();
+            CvInvoke.HoughLines(dst, linhas, 1, Math.PI / 180, tolerancia, 0, 0);
+            if (linhas.Size > 1000)
             {
-                lines.Clear();
-                oldLines.Clear();
-                intersections.Clear();
-                intersectionMatrix.Clear();
-                tessIntersectionMatrix.Clear();
-                removeLines.Clear();
-                xValues.Clear();
-                yValues.Clear();
-
-                //Then it invokes the HoughTransform to find the lines on the result image
-                var linhas = new VectorOfPointF();
-                CvInvoke.HoughLines(dst, linhas, 1, Math.PI / 180, tolerancia, 0, 0);
-
-                imgTabelaNoLines = dst.ToImage<Bgr, Byte>().ToBitmap();
-                imgTabelaLines = dst.ToImage<Bgr, Byte>().ToBitmap();
-                gfxTabela = System.Drawing.Graphics.FromImage(imgTabelaLines);
-                showOriginalImage = false;
-                //UpdatePainting();
-
-                //And finally it draws the lines found and updates the data structures used
-                for (int i = 0; i < linhas.Size; i++)
-                {
-                    float rho = linhas[i].X, theta = linhas[i].Y;
-                    Point pt1 = new Point(), pt2 = new Point();
-                    double a = Math.Cos(theta), b = Math.Sin(theta);
-                    double x0 = a * rho, y0 = b * rho;
-                    pt1.X = (int)Math.Round(x0 + imgTabelaLines.Width * (-b));
-                    pt1.Y = (int)Math.Round(y0 + imgTabelaLines.Height * (a));
-                    pt2.X = (int)Math.Round(x0 - imgTabelaLines.Width * (-b));
-                    pt2.Y = (int)Math.Round(y0 - imgTabelaLines.Height * (a));
-                    oldLines.Add(new Tuple<Point, Point>(pt1, pt2));
-                    UpdateGfx(pt1.X, pt2.X, pt1.Y, pt2.Y);
-                }
-                GetIntersections();
-                UpdatePainting();
-                AddHist();
+                MessageBox.Show("Valor de tolerância muito baixo.", "Erro");
+                return;
             }
-            else
+
+            imgTabelaNoLines = dst.ToImage<Bgr, Byte>().ToBitmap();
+            imgTabelaLines = dst.ToImage<Bgr, Byte>().ToBitmap();
+            gfxTabela = System.Drawing.Graphics.FromImage(imgTabelaLines);
+            showOriginalImage = false;
+            //UpdatePainting();
+
+            //And finally it draws the lines found and updates the data structures used
+            for (int i = 0; i < linhas.Size; i++)
             {
-                MessageBox.Show("Valor de tolerância invalido.");
+                float rho = linhas[i].X, theta = linhas[i].Y;
+                Point pt1 = new Point(), pt2 = new Point();
+                double a = Math.Cos(theta), b = Math.Sin(theta);
+                double x0 = a * rho, y0 = b * rho;
+                pt1.X = (int)Math.Round(x0 + imgTabelaLines.Width * (-b));
+                pt1.Y = (int)Math.Round(y0 + imgTabelaLines.Height * (a));
+                pt2.X = (int)Math.Round(x0 - imgTabelaLines.Width * (-b));
+                pt2.Y = (int)Math.Round(y0 - imgTabelaLines.Height * (a));
+                oldLines.Add(new Tuple<Point, Point>(pt1, pt2));
+                UpdateGfx(pt1.X, pt2.X, pt1.Y, pt2.Y);
             }
+            GetIntersections();
+            UpdatePainting();
+            AddHist();
         }
 
         //Function that removes the given point from the matrix of line intersections used for the OCR
@@ -1180,6 +1179,7 @@ namespace TableOCR_0._2
 
             using (FileStream fs = File.Create(txtPath))
             {
+                //Removes empty lines and columns
                 CleanUpMatrix(ref matrix);
 
                 for (i = 0; i < matrix.Count; i++)
@@ -1212,6 +1212,7 @@ namespace TableOCR_0._2
             {
                 fsc.Show();
                 fsc.UpdatePainting();
+                fsc.Blink_Screen();
             }
         }
 
@@ -1266,6 +1267,12 @@ namespace TableOCR_0._2
             curImgHasLines = false;
             showOriginalImage = true;
 
+            UpdatePainting();
+        }
+
+        private void buttonDesbinarizar_Click(object sender, EventArgs e)
+        {
+            imgTabelaOriginal = imgTabelaNonBinarized;
             UpdatePainting();
         }
     }

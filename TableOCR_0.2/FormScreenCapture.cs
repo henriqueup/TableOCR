@@ -30,11 +30,53 @@ namespace TableOCR_0._2
             this.pai = pai;
             this.bmpScreenshot = bmpScreenshot;
             this.gfxScreenshot = gfxScreenshot;
-            this.bmpOriginal = bmpScreenshot;
-            this.gfxOriginal = gfxScreenshot;
-            this.FormBorderStyle = FormBorderStyle.None;
-            this.Size = new Size(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
-            this.StartPosition = FormStartPosition.WindowsDefaultLocation;
+            bmpOriginal = bmpScreenshot;
+            gfxOriginal = gfxScreenshot;
+            FormBorderStyle = FormBorderStyle.None;
+            Size = new Size(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
+            StartPosition = FormStartPosition.WindowsDefaultLocation;
+            DoubleBuffered = true;
+        }
+
+        public void Wait(int milliseconds)
+        {
+            Timer timer = new Timer();
+            if (milliseconds == 0 || milliseconds < 0) return;
+            //Console.WriteLine("start wait timer");
+            timer.Interval = milliseconds;
+            timer.Enabled = true;
+            timer.Start();
+            timer.Tick += (s, e) =>
+            {
+                timer.Enabled = false;
+                timer.Stop();
+                //Console.WriteLine("stop wait timer");
+            };
+            while (timer.Enabled)
+            {
+                Application.DoEvents();
+            }
+        }
+
+        public void Blink_Screen()
+        {
+            Bitmap bmpWhite = new Bitmap(bmpOriginal.Width, bmpOriginal.Height, PixelFormat.Format24bppRgb);
+            using (Graphics gfxWhite = Graphics.FromImage(bmpWhite))
+            {
+                gfxWhite.FillRectangle(Brushes.Crimson, 0, 0, bmpWhite.Width, bmpWhite.Height);
+
+                Bitmap bmpBackup = bmpScreenshot;
+                Graphics gfxBackup = gfxScreenshot;
+                bmpScreenshot = bmpWhite;
+                gfxScreenshot = gfxWhite;
+                UpdatePainting();
+
+                Wait(100);
+
+                bmpScreenshot = bmpBackup;
+                gfxScreenshot = gfxBackup;
+                UpdatePainting();
+            }
         }
 
         private void FormScreenshot_Paint(object sender, PaintEventArgs e)
