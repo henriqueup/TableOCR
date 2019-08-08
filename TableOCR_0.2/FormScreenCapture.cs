@@ -27,6 +27,7 @@ namespace TableOCR_0._2
         public FormScreenCapture(Bitmap bmpScreenshot, Graphics gfxScreenshot, Form1 pai)
         {
             InitializeComponent();
+            this.Cursor = Cursors.Cross;
             this.pai = pai;
             this.bmpScreenshot = bmpScreenshot;
             this.gfxScreenshot = gfxScreenshot;
@@ -117,7 +118,7 @@ namespace TableOCR_0._2
                 pai.Show();
                 pai.Activate();
                 pai.WindowState = FormWindowState.Normal;
-
+                
                 this.Close();
                 this.Dispose();
             }

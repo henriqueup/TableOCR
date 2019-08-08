@@ -28,15 +28,16 @@ namespace TableOCR_0._2
         const int borderLeft = 8;
         const int borderTop = 30;
         //private string path;
-        public Image imgTabelaOriginal;
-        private Image imgTabelaNonBinarized;
-        private Image imgTabelaNoLines;
-        private Image imgTabelaLines;
+        public Image imgTabelaOriginal = null;
+        private Image imgTabelaNonBinarized = null;
+        private Image imgTabelaNoLines = null;
+        private Image imgTabelaLines = null;
         private System.Drawing.Graphics gfxTabela;
         private Size sizeOriginal;
         static CultureInfo ci = new CultureInfo("pt-BR");
         private int curHist;
         private int curUndoHist;
+        int houghTolerance = 0;
         private bool curImgHasLines;
         private bool showOriginalImage;
         private List<Tuple<Image, List<Tuple<Point, Point>>, List<Tuple<Point, Point>>>> hist = new List<Tuple<Image, List<Tuple<Point, Point>>, List<Tuple<Point, Point>>>>();
@@ -531,6 +532,7 @@ namespace TableOCR_0._2
         //It first runs an algorithm for edge detection on the binarized image,
         //Then it invokes the HoughTransform to find the lines on the result image
         //And finally it draws the lines found and updates the data structures used
+        //***Depends on the value of global variable houghTolerance***
         private void buttonFiltro_Click(object sender, EventArgs e)
         {
             if (fsc != null)
@@ -538,8 +540,12 @@ namespace TableOCR_0._2
                 fsc.Close();
                 fsc.Dispose();
             }
+            if (imgTabelaOriginal == null)
+            {
+                MessageBox.Show("It is necessary to load an image first.", "Error");
+                return;
+            }
             
-
             Mat src = GetMatFromSDImage(imgTabelaOriginal);
             Mat dst = GetMatFromSDImage(imgTabelaOriginal);
 
@@ -549,8 +555,6 @@ namespace TableOCR_0._2
             //It first runs an algorithm for edge detection on the binarized image,
             CvInvoke.Canny(src, dst, 200, 300, 3);
             src.Dispose();
-
-            int tolerancia = trackBarTolerancia.Value * 100;
 
             lines.Clear();
             oldLines.Clear();
@@ -563,7 +567,7 @@ namespace TableOCR_0._2
 
             //Then it invokes the HoughTransform to find the lines on the result image
             var linhas = new VectorOfPointF();
-            CvInvoke.HoughLines(dst, linhas, 1, Math.PI / 180, tolerancia, 0, 0);
+            CvInvoke.HoughLines(dst, linhas, 1, Math.PI / 180, houghTolerance, 0, 0);
             if (linhas.Size > 1000)
             {
                 MessageBox.Show("Valor de tolerância muito baixo.", "Erro");
@@ -591,6 +595,7 @@ namespace TableOCR_0._2
                 UpdateGfx(pt1.X, pt2.X, pt1.Y, pt2.Y);
             }
             GetIntersections();
+            curImgHasLines = true;
             UpdatePainting();
             AddHist();
         }
@@ -719,6 +724,12 @@ namespace TableOCR_0._2
         //It removes from the list of lines or segments each one that is in the remove list
         private void buttonRemove_Click(object sender, EventArgs e)
         {
+            if (imgTabelaOriginal == null)
+            {
+                MessageBox.Show("It is necessary to load an image first.", "Error");
+                return;
+            }
+
             bool p1WasRemoved, p2WasRemoved;
             //Resets table image
             imgTabelaLines = (Image)imgTabelaNoLines.Clone();
@@ -1061,7 +1072,24 @@ namespace TableOCR_0._2
         //which is openned once the whole process is finished
         private void buttonTesseract_Click(object sender, EventArgs e)
         {
-            const string dir = @"R:\TabelaOCR\";
+            if (imgTabelaOriginal == null)
+            {
+                MessageBox.Show("It is necessary to load an image first.", "Error");
+                return;
+            }
+
+            string dir = string.Empty;
+            using (var fbd = new FolderBrowserDialog())
+            {
+                fbd.SelectedPath = @"C:\Users\Public\Desktop";
+                fbd.Description = "Select the folder to save the output csv file.";
+                DialogResult result = fbd.ShowDialog();
+
+                if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
+                {
+                    dir = fbd.SelectedPath + "\\";
+                }
+            }
             string txtPath = dir + "out.csv";
 
             try
@@ -1084,7 +1112,8 @@ namespace TableOCR_0._2
             PrintCells();
 
             string dataPath, language, inputFile;
-            dataPath = @"C:\Tesseract\tesseract-ocr\tessdata";
+            //dataPath = @"C:\Tesseract\tesseract-ocr\tessdata";
+            dataPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).Substring(6) + "\\tessdata";
             language = "eng";
             OcrEngineMode oem = OcrEngineMode.DEFAULT;
             PageSegmentationMode psm = PageSegmentationMode.SINGLE_BLOCK;
@@ -1143,7 +1172,7 @@ namespace TableOCR_0._2
 
                             inputFile = dir + "cell_" + i + "," + j + ".jpg";
                             Pix pix = tessBaseAPI.SetImage(inputFile);
-                            //File.Delete(dir + "cell" + i + ".png");
+                            File.Delete(dir + "cell_" + i + "," + j + ".jpg");
 
                             tessBaseAPI.Recognize();
 
@@ -1221,6 +1250,12 @@ namespace TableOCR_0._2
         //like noise reduction and binarization
         private void buttonBinarizar_Click(object sender, EventArgs e)
         {
+            if (imgTabelaOriginal == null)
+            {
+                MessageBox.Show("It is necessary to load an image first.", "Error");
+                return;
+            }
+
             //int threshold = Int32.Parse(textBoxToleranciaBinaria.Text);
             //Image<Gray, Byte> img = new Image<Gray, byte>((Bitmap)imgTabelaNonBinarized);
             //imgTabelaOriginal = img.Convert<Gray, byte>().ThresholdBinary(new Gray(threshold), new Gray(255)).ToBitmap();
@@ -1261,6 +1296,7 @@ namespace TableOCR_0._2
             imgTabelaNoLines = null;
             imgTabelaLines = null;
 
+            trackBarTolerancia.Value = 0;
             curHist = 0;
             curUndoHist = 0;
             this.Size = sizeOriginal;
@@ -1272,8 +1308,25 @@ namespace TableOCR_0._2
 
         private void buttonDesbinarizar_Click(object sender, EventArgs e)
         {
+            if (imgTabelaOriginal == null)
+            {
+                MessageBox.Show("It is necessary to load an image first.", "Error");
+                return;
+            }
+
             imgTabelaOriginal = imgTabelaNonBinarized;
             UpdatePainting();
+        }
+
+        private void trackBarTolerancia_ValueChanged(object sender, EventArgs e)
+        {
+            houghTolerance = trackBarTolerancia.Value * 100;
+            numericUpDownFineTolerance.Text = houghTolerance.ToString();
+        }
+
+        private void numericUpDownFineTolerance_ValueChanged(object sender, EventArgs e)
+        {
+            houghTolerance = Int32.Parse(numericUpDownFineTolerance.Text);
         }
     }
 }

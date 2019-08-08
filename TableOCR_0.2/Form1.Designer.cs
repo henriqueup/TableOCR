@@ -42,7 +42,10 @@
             this.buttonResetar = new System.Windows.Forms.Button();
             this.buttonDesbinarizar = new System.Windows.Forms.Button();
             this.trackBarTolerancia = new System.Windows.Forms.TrackBar();
+            this.numericUpDownFineTolerance = new System.Windows.Forms.NumericUpDown();
+            this.label2 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarTolerancia)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownFineTolerance)).BeginInit();
             this.SuspendLayout();
             // 
             // buttonArquivo
@@ -57,22 +60,24 @@
             // 
             // buttonRedo
             // 
-            this.buttonRedo.Location = new System.Drawing.Point(780, 41);
+            this.buttonRedo.Location = new System.Drawing.Point(856, 41);
             this.buttonRedo.Name = "buttonRedo";
             this.buttonRedo.Size = new System.Drawing.Size(75, 23);
             this.buttonRedo.TabIndex = 10;
             this.buttonRedo.Text = "Redo";
             this.buttonRedo.UseVisualStyleBackColor = true;
+            this.buttonRedo.Visible = false;
             this.buttonRedo.Click += new System.EventHandler(this.buttonRedo_Click);
             // 
             // buttonUndo
             // 
-            this.buttonUndo.Location = new System.Drawing.Point(780, 12);
+            this.buttonUndo.Location = new System.Drawing.Point(856, 12);
             this.buttonUndo.Name = "buttonUndo";
             this.buttonUndo.Size = new System.Drawing.Size(75, 23);
             this.buttonUndo.TabIndex = 9;
             this.buttonUndo.Text = "Undo";
             this.buttonUndo.UseVisualStyleBackColor = true;
+            this.buttonUndo.Visible = false;
             this.buttonUndo.Click += new System.EventHandler(this.buttonUndo_Click);
             // 
             // buttonRemove
@@ -180,12 +185,42 @@
             this.trackBarTolerancia.Name = "trackBarTolerancia";
             this.trackBarTolerancia.Size = new System.Drawing.Size(62, 45);
             this.trackBarTolerancia.TabIndex = 22;
+            this.trackBarTolerancia.ValueChanged += new System.EventHandler(this.trackBarTolerancia_ValueChanged);
+            // 
+            // numericUpDownFineTolerance
+            // 
+            this.numericUpDownFineTolerance.Increment = new decimal(new int[] {
+            5,
+            0,
+            0,
+            0});
+            this.numericUpDownFineTolerance.Location = new System.Drawing.Point(728, 44);
+            this.numericUpDownFineTolerance.Maximum = new decimal(new int[] {
+            10000,
+            0,
+            0,
+            0});
+            this.numericUpDownFineTolerance.Name = "numericUpDownFineTolerance";
+            this.numericUpDownFineTolerance.Size = new System.Drawing.Size(120, 20);
+            this.numericUpDownFineTolerance.TabIndex = 25;
+            this.numericUpDownFineTolerance.ValueChanged += new System.EventHandler(this.numericUpDownFineTolerance_ValueChanged);
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(725, 22);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(95, 13);
+            this.label2.TabIndex = 26;
+            this.label2.Text = "Ajustar Tolerância:";
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(867, 156);
+            this.Controls.Add(this.label2);
+            this.Controls.Add(this.numericUpDownFineTolerance);
             this.Controls.Add(this.buttonFiltro);
             this.Controls.Add(this.trackBarTolerancia);
             this.Controls.Add(this.buttonDesbinarizar);
@@ -205,6 +240,7 @@
             this.Deactivate += new System.EventHandler(this.Form1_Deactivate);
             this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Form1_MouseDown);
             ((System.ComponentModel.ISupportInitialize)(this.trackBarTolerancia)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownFineTolerance)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -226,6 +262,8 @@
         private System.Windows.Forms.Button buttonResetar;
         private System.Windows.Forms.Button buttonDesbinarizar;
         private System.Windows.Forms.TrackBar trackBarTolerancia;
+        private System.Windows.Forms.NumericUpDown numericUpDownFineTolerance;
+        private System.Windows.Forms.Label label2;
     }
 }
 
