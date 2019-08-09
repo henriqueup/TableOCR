@@ -346,7 +346,54 @@ namespace TableOCR_0._2
             CvInvoke.FindContours(image, result, null, type, method);
             return result;
         }
-        
+
+        //Function that recieves the OCR results matrix and removes empty rows and columns
+        private void CleanUpMatrix(ref List<List<string>> matrix)
+        {
+            bool skip;
+
+            //removing empty rows
+            for (int i = 0; i < matrix.Count; i++)
+            {
+                skip = true;
+                for (int j = 0; j < matrix[i].Count; j++)
+                {
+                    if (matrix[i][j] != ".")
+                    {
+                        skip = false;
+                        break;
+                    }
+                }
+
+                if (skip)
+                {
+                    matrix.RemoveAt(i);
+                }
+            }
+
+            //removing empty columns
+            for (int j = 0; j < matrix[0].Count; j++)
+            {
+                skip = true;
+                for (int i = 0; i < matrix.Count; i++)
+                {
+                    if (matrix[i][j] != ".")
+                    {
+                        skip = false;
+                        break;
+                    }
+                }
+
+                if (skip)
+                {
+                    for (int i = 0; i < matrix.Count; i++)
+                    {
+                        matrix[i].RemoveAt(j);
+                    }
+                }
+            }
+        }
+
         //Method called when the button for applying the OCR "Tesseract" is clicked
         //It will create the cells structure and go through it, trying to extract the content
         //from the image in the region delimited by the cell and then write it on a CSV file
@@ -486,7 +533,7 @@ namespace TableOCR_0._2
             using (FileStream fs = File.Create(txtPath))
             {
                 //Removes empty lines and columns
-                //CleanUpMatrix(ref matrix);
+                CleanUpMatrix(ref matrix);
 
                 for (i = 0; i < matrix.Count; i++)
                 {
