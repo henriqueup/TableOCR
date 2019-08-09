@@ -501,7 +501,8 @@ namespace TableOCR_0._2
                     matrix[i].Add(".");
                     string myString = ".";
                     skip = false;
-                    Rectangle roi = cell;
+                    //new Rectangle(cell.Item1.X + 4, cell.Item1.Y + 4, cell.Item4.X - cell.Item1.X - 4, cell.Item4.Y - cell.Item1.Y - 4);
+                    Rectangle roi = new Rectangle(cell.X + 5, cell.Y + 5, cell.Width - 10, cell.Height - 10);
                     if (roi.Height <= 0 || roi.Width <= 0)
                     {
                         skip = true;
@@ -608,6 +609,8 @@ namespace TableOCR_0._2
         {
             hist.Clear();
             undoHist.Clear();
+            boxList.Clear();
+            removeRectangles.Clear();
             cells.Clear();
 
             imgTabelaOriginal = null;
@@ -635,6 +638,17 @@ namespace TableOCR_0._2
             houghTolerance = Int32.Parse(numericUpDownFineTolerance.Text);
         }
 
+        private bool ContainsYGap(HashSet<int> yValues, int value, int gap)
+        {
+            bool ret = false;
+            for (int i = value-gap; i <= value+gap; i++)
+            {
+                if (yValues.Contains(i)) ret = true;
+            }
+
+            return ret;
+        }
+
         private void BuildCells()
         {
             HashSet<int> yValues = new HashSet<int>();
@@ -642,13 +656,18 @@ namespace TableOCR_0._2
             boxList = boxList.OrderBy(p => p.Y).ThenBy(p => p.X).ToList();
             foreach (Rectangle rect in boxList)
             {
-                if (!yValues.Contains(rect.Y))
+                if (!ContainsYGap(yValues, rect.Y, 4))
                 {
                     cells.Add(new List<Rectangle>());
                 }
 
                 cells.Last().Add(rect);
                 yValues.Add(rect.Y);
+            }
+
+            for (int i = 0; i < cells.Count; i++)
+            {
+                cells[i] = cells[i].OrderBy(p => p.X).ToList();
             }
         }
 
