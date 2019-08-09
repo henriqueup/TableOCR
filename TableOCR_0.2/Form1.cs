@@ -91,12 +91,40 @@ namespace TableOCR_0._2
             //undoHist.Add(new Tuple<Image, List<Tuple<Point, Point>>, List<Tuple<Point, Point>>>((Image)imgTabelaLines.Clone(), new List<Tuple<Point, Point>>(oldLines), new List<Tuple<Point, Point>>(lines)));
             curUndoHist++;
         }
-        
+
+        private Rectangle GetInnerMostRectangle(Point clicked)
+        {
+            Rectangle innerMostRect = new Rectangle(new Point(-1, -1), new Size(0, 0));
+
+            if (imgTabelaOriginal == null)
+            {
+                MessageBox.Show("It is necessary to load an image first.", "Error");
+                return innerMostRect;
+            }
+
+            if (boxList == null) return innerMostRect;
+
+            List<Rectangle> clickedRectangles = new List<Rectangle>();
+            foreach (Rectangle rect in boxList)
+            {
+                if (clicked.X >= rect.X && clicked.X <= rect.X + rect.Width && clicked.Y >= rect.Y && clicked.Y <= rect.Y + rect.Height)
+                {
+                    clickedRectangles.Add(rect);
+                    if (innerMostRect.X == -1 || innerMostRect.Height*innerMostRect.Width > rect.Height * rect.Width)
+                    {
+                        innerMostRect = rect;
+                    }
+                }
+            }
+
+            return innerMostRect;
+        }
+
         //Method called whenever the mouse is clicked
         //It checks whether the point clicked has lines or segments, highlighting or de-highlighting them
         private void Form1_MouseDown(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left)
+            if (e.Button == MouseButtons.Left && imgTabelaLines != null)
             {
                 //The coordinates of the point clicked on the image are set by subtracting the position
                 //of the form on the screen and the space between the border and the image from the position
@@ -104,32 +132,26 @@ namespace TableOCR_0._2
                 //textBox1.Text = (Cursor.Position.X - this.Left - borderLeft) + ", " + (Cursor.Position.Y - this.Top - 80 - borderTop);
                 Point clicked = new Point(Cursor.Position.X - this.Left - borderLeft, Cursor.Position.Y - this.Top - 80 - borderTop);
 
-                //A list with the two poits that define each line within a 3 pixel range of the point clicked
-                //List<Tuple<Point, Point>> nearLines = FindLinesNear(clicked);
+                Rectangle clickedRect = GetInnerMostRectangle(clicked);
 
-                ////If there are any lines near the point clicked, they are colored accordingly
-                //if (nearLines.Count > 0)
-                //{
-                //    Pen bluePen = new Pen(Color.Blue, 3);
-                //    Pen redPen = new Pen(Color.Red, 3);
-                //    foreach (Tuple<Point, Point> t in nearLines)
-                //    {
-                //        if (removeLines.Add(t))
-                //        {
-                //            //The line was not already in the hash with lines to be removed,
-                //            //so it is colored for removal
-                //            gfxTabela.DrawLine(bluePen, t.Item1, t.Item2);
-                //        }
-                //        else
-                //        {
-                //            //The line was already in the hash, so it is colored back to normal
-                //            //and removed from the removal hash
-                //            gfxTabela.DrawLine(redPen, t.Item1, t.Item2);
-                //            removeLines.Remove(t);
-                //        }
-                //    }
-                //    UpdatePainting();
-                //}
+                if (!removeRectangles.Contains(clickedRect))
+                {
+                    Image<Bgr, Byte> linesRectangleImage = new Image<Bgr, byte>((Bitmap)imgTabelaLines);
+                    linesRectangleImage.Draw(clickedRect, new Bgr(Color.Blue), 2);
+                    imgTabelaLines = linesRectangleImage.ToBitmap();
+                    UpdatePainting();
+
+                    removeRectangles.Add(clickedRect);
+                }
+                else
+                {
+                    Image<Bgr, Byte> linesRectangleImage = new Image<Bgr, byte>((Bitmap)imgTabelaLines);
+                    linesRectangleImage.Draw(clickedRect, new Bgr(Color.Red), 2);
+                    imgTabelaLines = linesRectangleImage.ToBitmap();
+                    UpdatePainting();
+
+                    removeRectangles.Remove(clickedRect);
+                }
             }
         }
 
@@ -621,6 +643,12 @@ namespace TableOCR_0._2
 
         private void buttonFiltro_Click(object sender, EventArgs e)
         {
+            if (imgTabelaOriginal == null)
+            {
+                MessageBox.Show("It is necessary to load an image first.", "Error");
+                return;
+            }
+
             //Load the image from file and resize it for display
             Image<Bgr, Byte> img = new Image<Bgr, byte>((Bitmap)imgTabelaOriginal);
 
