@@ -264,7 +264,18 @@ namespace TableOCR_0._2
                 return;
             }
 
-            
+            if (removeRectangles.Count == 0) return;
+
+            foreach (Rectangle remv in removeRectangles)
+            {
+                boxList.Remove(remv);
+            }
+
+            Image<Bgr, Byte> linesRectangleImage = new Image<Bgr, byte>((Bitmap)imgTabelaOriginal);
+            foreach (Rectangle box in boxList)
+                linesRectangleImage.Draw(box, new Bgr(Color.Red), 2);
+            imgTabelaLines = linesRectangleImage.ToBitmap();
+            UpdatePainting();
         }
 
         //Attempt at adding a undo-redo system
@@ -665,8 +676,6 @@ namespace TableOCR_0._2
             
 
             #region Canny and edge detection
-            double cannyThreshold = 130;
-            double cannyThresholdLinking = 100;
             UMat cannyEdges = new UMat();
             //CvInvoke.Canny(uimage, cannyEdges, cannyThreshold, cannyThresholdLinking);
             //CvInvoke.Threshold(uimage, cannyEdges, 100, 255, ThresholdType.Otsu);
