@@ -32,15 +32,12 @@
             this.buttonRedo = new System.Windows.Forms.Button();
             this.buttonUndo = new System.Windows.Forms.Button();
             this.buttonRemove = new System.Windows.Forms.Button();
-            this.checkBoxLinha = new System.Windows.Forms.CheckBox();
             this.buttonLinhas = new System.Windows.Forms.Button();
             this.buttonTesseract = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.buttonFiltro = new System.Windows.Forms.Button();
             this.buttonCapturar = new System.Windows.Forms.Button();
-            this.buttonBinarizar = new System.Windows.Forms.Button();
             this.buttonResetar = new System.Windows.Forms.Button();
-            this.buttonDesbinarizar = new System.Windows.Forms.Button();
             this.trackBarTolerancia = new System.Windows.Forms.TrackBar();
             this.numericUpDownFineTolerance = new System.Windows.Forms.NumericUpDown();
             this.label2 = new System.Windows.Forms.Label();
@@ -82,7 +79,7 @@
             // 
             // buttonRemove
             // 
-            this.buttonRemove.Location = new System.Drawing.Point(476, 41);
+            this.buttonRemove.Location = new System.Drawing.Point(350, 41);
             this.buttonRemove.Name = "buttonRemove";
             this.buttonRemove.Size = new System.Drawing.Size(120, 23);
             this.buttonRemove.TabIndex = 8;
@@ -90,19 +87,9 @@
             this.buttonRemove.UseVisualStyleBackColor = true;
             this.buttonRemove.Click += new System.EventHandler(this.buttonRemove_Click);
             // 
-            // checkBoxLinha
-            // 
-            this.checkBoxLinha.AutoSize = true;
-            this.checkBoxLinha.Location = new System.Drawing.Point(602, 15);
-            this.checkBoxLinha.Name = "checkBoxLinha";
-            this.checkBoxLinha.Size = new System.Drawing.Size(84, 17);
-            this.checkBoxLinha.TabIndex = 7;
-            this.checkBoxLinha.Text = "Linha Inteira";
-            this.checkBoxLinha.UseVisualStyleBackColor = true;
-            // 
             // buttonLinhas
             // 
-            this.buttonLinhas.Location = new System.Drawing.Point(476, 12);
+            this.buttonLinhas.Location = new System.Drawing.Point(350, 12);
             this.buttonLinhas.Name = "buttonLinhas";
             this.buttonLinhas.Size = new System.Drawing.Size(120, 23);
             this.buttonLinhas.TabIndex = 6;
@@ -112,9 +99,9 @@
             // 
             // buttonTesseract
             // 
-            this.buttonTesseract.Location = new System.Drawing.Point(602, 41);
+            this.buttonTesseract.Location = new System.Drawing.Point(602, 12);
             this.buttonTesseract.Name = "buttonTesseract";
-            this.buttonTesseract.Size = new System.Drawing.Size(120, 23);
+            this.buttonTesseract.Size = new System.Drawing.Size(120, 49);
             this.buttonTesseract.TabIndex = 11;
             this.buttonTesseract.Text = "Tesseract";
             this.buttonTesseract.UseVisualStyleBackColor = true;
@@ -123,7 +110,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(350, 15);
+            this.label1.Location = new System.Drawing.Point(224, 15);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(60, 13);
             this.label1.TabIndex = 13;
@@ -131,7 +118,7 @@
             // 
             // buttonFiltro
             // 
-            this.buttonFiltro.Location = new System.Drawing.Point(350, 41);
+            this.buttonFiltro.Location = new System.Drawing.Point(224, 41);
             this.buttonFiltro.Name = "buttonFiltro";
             this.buttonFiltro.Size = new System.Drawing.Size(120, 23);
             this.buttonFiltro.TabIndex = 14;
@@ -149,16 +136,6 @@
             this.buttonCapturar.UseVisualStyleBackColor = true;
             this.buttonCapturar.Click += new System.EventHandler(this.buttonCapturar_Click);
             // 
-            // buttonBinarizar
-            // 
-            this.buttonBinarizar.Location = new System.Drawing.Point(224, 12);
-            this.buttonBinarizar.Name = "buttonBinarizar";
-            this.buttonBinarizar.Size = new System.Drawing.Size(120, 23);
-            this.buttonBinarizar.TabIndex = 19;
-            this.buttonBinarizar.Text = "Binarizar";
-            this.buttonBinarizar.UseVisualStyleBackColor = true;
-            this.buttonBinarizar.Click += new System.EventHandler(this.buttonBinarizar_Click);
-            // 
             // buttonResetar
             // 
             this.buttonResetar.Location = new System.Drawing.Point(12, 12);
@@ -169,19 +146,9 @@
             this.buttonResetar.UseVisualStyleBackColor = true;
             this.buttonResetar.Click += new System.EventHandler(this.buttonResetar_Click);
             // 
-            // buttonDesbinarizar
-            // 
-            this.buttonDesbinarizar.Location = new System.Drawing.Point(224, 41);
-            this.buttonDesbinarizar.Name = "buttonDesbinarizar";
-            this.buttonDesbinarizar.Size = new System.Drawing.Size(120, 23);
-            this.buttonDesbinarizar.TabIndex = 21;
-            this.buttonDesbinarizar.Text = "Desbinarizar";
-            this.buttonDesbinarizar.UseVisualStyleBackColor = true;
-            this.buttonDesbinarizar.Click += new System.EventHandler(this.buttonDesbinarizar_Click);
-            // 
             // trackBarTolerancia
             // 
-            this.trackBarTolerancia.Location = new System.Drawing.Point(408, 12);
+            this.trackBarTolerancia.Location = new System.Drawing.Point(282, 12);
             this.trackBarTolerancia.Name = "trackBarTolerancia";
             this.trackBarTolerancia.Size = new System.Drawing.Size(62, 45);
             this.trackBarTolerancia.TabIndex = 22;
@@ -194,7 +161,7 @@
             0,
             0,
             0});
-            this.numericUpDownFineTolerance.Location = new System.Drawing.Point(728, 44);
+            this.numericUpDownFineTolerance.Location = new System.Drawing.Point(476, 41);
             this.numericUpDownFineTolerance.Maximum = new decimal(new int[] {
             10000,
             0,
@@ -208,7 +175,7 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(725, 22);
+            this.label2.Location = new System.Drawing.Point(473, 19);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(95, 13);
             this.label2.TabIndex = 26;
@@ -218,21 +185,18 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(867, 156);
+            this.ClientSize = new System.Drawing.Size(734, 156);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.numericUpDownFineTolerance);
             this.Controls.Add(this.buttonFiltro);
             this.Controls.Add(this.trackBarTolerancia);
-            this.Controls.Add(this.buttonDesbinarizar);
             this.Controls.Add(this.buttonResetar);
-            this.Controls.Add(this.buttonBinarizar);
             this.Controls.Add(this.buttonCapturar);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.buttonTesseract);
             this.Controls.Add(this.buttonRedo);
             this.Controls.Add(this.buttonUndo);
             this.Controls.Add(this.buttonRemove);
-            this.Controls.Add(this.checkBoxLinha);
             this.Controls.Add(this.buttonLinhas);
             this.Controls.Add(this.buttonArquivo);
             this.Name = "Form1";
@@ -252,15 +216,12 @@
         private System.Windows.Forms.Button buttonRedo;
         private System.Windows.Forms.Button buttonUndo;
         private System.Windows.Forms.Button buttonRemove;
-        private System.Windows.Forms.CheckBox checkBoxLinha;
         private System.Windows.Forms.Button buttonLinhas;
         private System.Windows.Forms.Button buttonTesseract;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Button buttonFiltro;
         private System.Windows.Forms.Button buttonCapturar;
-        private System.Windows.Forms.Button buttonBinarizar;
         private System.Windows.Forms.Button buttonResetar;
-        private System.Windows.Forms.Button buttonDesbinarizar;
         private System.Windows.Forms.TrackBar trackBarTolerancia;
         private System.Windows.Forms.NumericUpDown numericUpDownFineTolerance;
         private System.Windows.Forms.Label label2;
