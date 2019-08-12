@@ -469,25 +469,7 @@ namespace TableOCR_0._2
 
             int i, j;
             bool skip = false;
-
-            string dataPath, language, inputFile;
-            //dataPath = @"C:\Tesseract\tesseract-ocr\tessdata";
-            dataPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).Substring(6) + "\\tessdata";
-            language = "eng";
-            OcrEngineMode oem = OcrEngineMode.DEFAULT;
-            PageSegmentationMode psm = PageSegmentationMode.SINGLE_BLOCK;
-
-            TessBaseAPI tessBaseAPI = new TessBaseAPI();
-
-            // Initialize tesseract-ocr
-            if (!tessBaseAPI.Init(dataPath, language, oem))
-            {
-                throw new Exception("Could not initialize tesseract.");
-            }
-
-            // Set the Page Segmentation mode
-            tessBaseAPI.SetPageSegMode(psm);
-
+            
             i = 0;
             List<List<string>> matrix = new List<List<string>>();
             BuildCells();
@@ -511,45 +493,51 @@ namespace TableOCR_0._2
                     if (!skip)
                     {
                         Bitmap src = new Bitmap(imgTabelaOriginal);
-                        Bitmap dst = new Bitmap(roi.Width, roi.Height);
-                        using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(dst))
+                        using (Bitmap dst = new Bitmap(roi.Width, roi.Height))
                         {
-                            g.DrawImage(src, new Rectangle(0, 0, dst.Width, dst.Height), roi, GraphicsUnit.Pixel);
-                        }
-                        //dst = ResizeImage(dst, 1024, 720);
-                        dst.Save(dir + "cell_" + i + "," + j + ".jpg");
+                            using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(dst))
+                            {
+                                g.DrawImage(src, new Rectangle(0, 0, dst.Width, dst.Height), roi, GraphicsUnit.Pixel);
+                            }
+                            src.Dispose();
 
-                        VectorOfVectorOfPoint result = FindContours(new Image<Gray, Byte>(dst), ChainApproxMethod.ChainApproxSimple, RetrType.List);
+                            VectorOfVectorOfPoint result = FindContours(new Image<Gray, Byte>(dst), ChainApproxMethod.ChainApproxSimple, RetrType.List);
 
-                        if (result == null || !(result.Size > 0))
-                        {
-                            skip = true;
-                            Debug.Print("skip");
-                        }
-                        src.Dispose();
-                        dst.Dispose();
+                            if (result == null || !(result.Size > 0))
+                            {
+                                skip = true;
+                                Debug.Print("skip");
+                            }
+                            else
+                            {
+                                string dataPath, language;
+                                dataPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).Substring(6) + "\\tessdata";
+                                language = "eng";
+                                EngineMode oem = EngineMode.Default;
+                                PageSegMode psm = PageSegMode.SingleBlock;
 
-                        inputFile = dir + "cell_" + i + "," + j + ".jpg";
-                        Pix pix = tessBaseAPI.SetImage(inputFile);
-                        File.Delete(dir + "cell_" + i + "," + j + ".jpg");
+                                using (TesseractEngine tessEngine = new TesseractEngine(dataPath, language, oem))
+                                {
+                                    tessEngine.DefaultPageSegMode = psm;
+                                    using (ResultIterator resultIterator = tessEngine.Process(dst).GetIterator())
+                                    {
+                                        StringBuilder stringBuilder = new StringBuilder();
+                                        PageIteratorLevel pageIteratorLevel = PageIteratorLevel.Para;
+                                        do
+                                        {
+                                            stringBuilder.Append(resultIterator.GetText(pageIteratorLevel));
+                                        } while (resultIterator.Next(pageIteratorLevel));
 
-                        tessBaseAPI.Recognize();
+                                        myString = stringBuilder.ToString();
 
-                        ResultIterator resultIterator = tessBaseAPI.GetIterator();
-
-                        StringBuilder stringBuilder = new StringBuilder();
-                        PageIteratorLevel pageIteratorLevel = PageIteratorLevel.RIL_PARA;
-                        do
-                        {
-                            stringBuilder.Append(resultIterator.GetUTF8Text(pageIteratorLevel));
-                        } while (resultIterator.Next(pageIteratorLevel));
-
-                        myString = stringBuilder.ToString();
-
-                        myString = Regex.Replace(myString, @"\s+", " ", RegexOptions.Multiline);
-                        if (myString == "")
-                        {
-                            skip = true;
+                                        myString = Regex.Replace(myString, @"\s+", " ", RegexOptions.Multiline);
+                                        if (myString == "")
+                                        {
+                                            skip = true;
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
 
