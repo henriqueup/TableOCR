@@ -470,6 +470,13 @@ namespace TableOCR_0._2
             int i, j;
             bool skip = false;
             
+            string dataPath, language;
+            dataPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).Substring(6) + "\\tessdata";
+            language = "eng";
+            EngineMode oem = EngineMode.Default;
+
+            TesseractEngine tessEngine = new TesseractEngine(dataPath, language, oem);
+
             i = 0;
             List<List<string>> matrix = new List<List<string>>();
             BuildCells();
@@ -484,7 +491,7 @@ namespace TableOCR_0._2
                     string myString = ".";
                     skip = false;
                     //new Rectangle(cell.Item1.X + 4, cell.Item1.Y + 4, cell.Item4.X - cell.Item1.X - 4, cell.Item4.Y - cell.Item1.Y - 4);
-                    Rectangle roi = new Rectangle(cell.X + 5, cell.Y + 5, cell.Width - 10, cell.Height - 10);
+                    Rectangle roi = new Rectangle(cell.X + 5, cell.Y + 4, cell.Width - 10, cell.Height - 8);
                     if (roi.Height <= 0 || roi.Width <= 0)
                     {
                         skip = true;
@@ -510,31 +517,18 @@ namespace TableOCR_0._2
                             }
                             else
                             {
-                                string dataPath, language;
-                                dataPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).Substring(6) + "\\tessdata";
-                                language = "eng";
-                                EngineMode oem = EngineMode.Default;
-                                PageSegMode psm = PageSegMode.SingleBlock;
-
-                                using (TesseractEngine tessEngine = new TesseractEngine(dataPath, language, oem))
+                                tessEngine.DefaultPageSegMode = PageSegMode.SingleBlock;
+                                using (Page resultPage = tessEngine.Process(dst))
                                 {
-                                    tessEngine.DefaultPageSegMode = psm;
-                                    using (ResultIterator resultIterator = tessEngine.Process(dst).GetIterator())
+                                    StringBuilder stringBuilder = new StringBuilder();
+                                    stringBuilder.Append(resultPage.GetText());
+
+                                    myString = stringBuilder.ToString();
+
+                                    myString = Regex.Replace(myString, @"\s+", " ", RegexOptions.Multiline);
+                                    if (myString == "")
                                     {
-                                        StringBuilder stringBuilder = new StringBuilder();
-                                        PageIteratorLevel pageIteratorLevel = PageIteratorLevel.Para;
-                                        do
-                                        {
-                                            stringBuilder.Append(resultIterator.GetText(pageIteratorLevel));
-                                        } while (resultIterator.Next(pageIteratorLevel));
-
-                                        myString = stringBuilder.ToString();
-
-                                        myString = Regex.Replace(myString, @"\s+", " ", RegexOptions.Multiline);
-                                        if (myString == "")
-                                        {
-                                            skip = true;
-                                        }
+                                        skip = true;
                                     }
                                 }
                             }
@@ -686,7 +680,12 @@ namespace TableOCR_0._2
             UMat cannyEdges = new UMat();
             //CvInvoke.Canny(uimage, cannyEdges, cannyThreshold, cannyThresholdLinking);
             //CvInvoke.Threshold(uimage, cannyEdges, 100, 255, ThresholdType.Otsu);
-            CvInvoke.AdaptiveThreshold(uimage, cannyEdges, 255, AdaptiveThresholdType.GaussianC, ThresholdType.Binary, 19, 3);
+            CvInvoke.AdaptiveThreshold(uimage, cannyEdges, 255, AdaptiveThresholdType.GaussianC, ThresholdType.Binary, 7, 3);
+
+            Mat element = CvInvoke.GetStructuringElement(ElementShape.Ellipse, new Size(3, 3), new Point(-1, -1));
+            CvInvoke.Erode(cannyEdges, cannyEdges, element, new Point(-1, -1), 1, BorderType.Constant, new MCvScalar(255, 255, 255));
+            element = CvInvoke.GetStructuringElement(ElementShape.Ellipse, new Size(2, 2), new Point(-1, -1));
+            CvInvoke.Dilate(cannyEdges, cannyEdges, element, new Point(-1, -1), 1, BorderType.Constant, new MCvScalar(255, 255, 255));
 
             showOriginalImage = false;
             imgTabelaNoLines = cannyEdges.ToImage<Bgr, byte>().ToBitmap();
@@ -697,15 +696,19 @@ namespace TableOCR_0._2
 
             using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
             {
-                CvInvoke.FindContours(cannyEdges, contours, null, RetrType.List, ChainApproxMethod.ChainApproxNone);
+                CvInvoke.FindContours(cannyEdges, contours, null, RetrType.List, ChainApproxMethod.ChainApproxSimple);
                 double maxArea = (imgTabelaOriginal.Size.Width - 10) * (imgTabelaOriginal.Size.Height - 10);
+
                 for (int i = 0; i < contours.Size; i++)
                 {
                     using (VectorOfPoint contour = contours[i])
+                    //using (VectorOfPoint approxContour = new VectorOfPoint())
                     {
+                        //double perimeter = CvInvoke.ArcLength(contour, true) * 0.05;
+                        //CvInvoke.ApproxPolyDP(contour, approxContour, perimeter, true);
                         Rectangle rect = CvInvoke.BoundingRectangle(contour);
                         double area = rect.Width * rect.Height;
-                        if (area > houghTolerance*2 && area < maxArea)
+                        if (area > houghTolerance * 2 && area < maxArea)
                             boxList.Add(rect);
                     }
                 }
@@ -719,6 +722,7 @@ namespace TableOCR_0._2
             foreach (Rectangle box in boxList)
                 linesRectangleImage.Draw(box, new Bgr(Color.Red), 2);
             imgTabelaLines = linesRectangleImage.ToBitmap();
+            curImgHasLines = true;
             UpdatePainting();
             #endregion
         }
