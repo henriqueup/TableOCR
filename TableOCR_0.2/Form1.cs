@@ -549,7 +549,7 @@ namespace TableOCR_0._2
             using (FileStream fs = File.Create(txtPath))
             {
                 //Removes empty lines and columns
-                CleanUpMatrix(ref matrix);
+                //CleanUpMatrix(ref matrix);
 
                 for (i = 0; i < matrix.Count; i++)
                 {
