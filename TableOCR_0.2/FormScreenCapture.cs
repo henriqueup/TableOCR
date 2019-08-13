@@ -10,6 +10,7 @@ using Emgu.CV;
 using Emgu.CV.Structure;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Drawing.Drawing2D;
 
 namespace TableOCR_0._2
 {
@@ -20,6 +21,7 @@ namespace TableOCR_0._2
         public Graphics gfxOriginal;
         public Bitmap bmpScreenshot;
         public Graphics gfxScreenshot;
+        private Bitmap canvas;
         private Point clicked;
         private bool mouseIsDown;
         private Rectangle rect;
@@ -33,10 +35,39 @@ namespace TableOCR_0._2
             this.gfxScreenshot = gfxScreenshot;
             bmpOriginal = bmpScreenshot;
             gfxOriginal = gfxScreenshot;
+
+            SetOpacity();
+
             FormBorderStyle = FormBorderStyle.None;
             Size = new Size(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
             StartPosition = FormStartPosition.WindowsDefaultLocation;
             DoubleBuffered = true;
+        }
+
+        private void SetOpacity()
+        {
+            canvas = (Bitmap)bmpScreenshot.Clone();
+            Bitmap bmpWhite = new Bitmap(canvas.Width, canvas.Height);
+            using (Graphics gfx = Graphics.FromImage(canvas))
+            using (Graphics gfxWhite = Graphics.FromImage(bmpWhite))
+            {
+                gfxWhite.Clear(Color.Transparent);
+
+                Region region = new Region(new Rectangle(0, 0, canvas.Width, canvas.Height));
+                GraphicsPath path = new GraphicsPath();
+                path.AddRectangle(rect);
+                region.Exclude(path);
+                gfxWhite.SetClip(region, CombineMode.Replace);
+                gfxWhite.FillRectangle(Brushes.White, 0, 0, canvas.Width, canvas.Height);
+
+                ColorMatrix matrix = new ColorMatrix();
+                matrix.Matrix33 = 0.58f;
+
+                ImageAttributes attributes = new ImageAttributes();
+                attributes.SetColorMatrix(matrix, ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
+
+                gfx.DrawImage(bmpWhite, new Rectangle(0, 0, canvas.Width, canvas.Height), 0, 0, bmpWhite.Width, bmpWhite.Height, GraphicsUnit.Pixel, attributes);
+            }
         }
 
         public void Wait(int milliseconds)
@@ -61,20 +92,20 @@ namespace TableOCR_0._2
 
         public void Blink_Screen()
         {
-            Bitmap bmpWhite = new Bitmap(bmpOriginal.Width, bmpOriginal.Height, PixelFormat.Format24bppRgb);
-            using (Graphics gfxWhite = Graphics.FromImage(bmpWhite))
+            Bitmap bmpCrimson = new Bitmap(bmpOriginal.Width, bmpOriginal.Height, PixelFormat.Format24bppRgb);
+            using (Graphics gfxCrimson = Graphics.FromImage(bmpCrimson))
             {
-                gfxWhite.FillRectangle(Brushes.Crimson, 0, 0, bmpWhite.Width, bmpWhite.Height);
+                gfxCrimson.FillRectangle(Brushes.Crimson, 0, 0, bmpCrimson.Width, bmpCrimson.Height);
 
-                Bitmap bmpBackup = bmpScreenshot;
+                Bitmap bmpBackup = (Bitmap)bmpScreenshot.Clone();
                 Graphics gfxBackup = gfxScreenshot;
-                bmpScreenshot = bmpWhite;
-                gfxScreenshot = gfxWhite;
+                bmpScreenshot = (Bitmap)bmpCrimson.Clone();
+                gfxScreenshot = gfxCrimson;
                 UpdatePainting();
 
                 Wait(100);
 
-                bmpScreenshot = bmpBackup;
+                bmpScreenshot = (Bitmap)bmpBackup.Clone();
                 gfxScreenshot = gfxBackup;
                 UpdatePainting();
             }
@@ -82,7 +113,7 @@ namespace TableOCR_0._2
 
         private void FormScreenshot_Paint(object sender, PaintEventArgs e)
         {
-            e.Graphics.DrawImage(this.bmpScreenshot, 0, 0);
+            e.Graphics.DrawImage(this.canvas, 0, 0);
             e.Graphics.DrawRectangle(new Pen(Color.Green, 2), rect);
         }
 
@@ -109,10 +140,10 @@ namespace TableOCR_0._2
             {
                 mouseIsDown = false;
 
-                Bitmap bmpCapture = new Bitmap(rect.Width, rect.Height, PixelFormat.Format32bppArgb);
+                Bitmap bmpCapture = new Bitmap(rect.Width-2, rect.Height-2, PixelFormat.Format32bppArgb);
                 Graphics gfxCapture = Graphics.FromImage(bmpCapture);
                 
-                gfxCapture.CopyFromScreen(rect.Left+1, rect.Top+1, 2, 2, new Size(rect.Width, rect.Height));
+                gfxCapture.CopyFromScreen(rect.Left+1, rect.Top+1, 0, 0, new Size(rect.Width-2, rect.Height-2));
                 pai.LoadImage(new Image<Gray, Byte>(bmpCapture));
                 
                 pai.Show();
@@ -128,7 +159,7 @@ namespace TableOCR_0._2
         {
             if (mouseIsDown)
             {
-                bmpScreenshot = bmpOriginal;
+                bmpScreenshot = (Bitmap)bmpOriginal.Clone();
                 gfxScreenshot = gfxOriginal;
 
                 int width = Cursor.Position.X - clicked.X;
@@ -142,6 +173,7 @@ namespace TableOCR_0._2
                 rect.Width = width;
                 rect.Height = height;
 
+                SetOpacity();
                 Refresh();
             }
         }

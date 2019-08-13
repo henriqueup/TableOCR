@@ -41,7 +41,7 @@ namespace TableOCR_0._2
         private bool showOriginalImage;
         private List<Tuple<Image, List<Tuple<Point, Point>>, List<Tuple<Point, Point>>>> hist = new List<Tuple<Image, List<Tuple<Point, Point>>, List<Tuple<Point, Point>>>>();
         private List<Tuple<Image, List<Tuple<Point, Point>>, List<Tuple<Point, Point>>>> undoHist = new List<Tuple<Image, List<Tuple<Point, Point>>, List<Tuple<Point, Point>>>>();
-        private List<Rectangle> boxList;
+        private List<Rectangle> boxList = new List<Rectangle>();
         private List<List<Rectangle>> cells = new List<List<Rectangle>>();
         private HashSet<Rectangle> removeRectangles = new HashSet<Rectangle>();
 
@@ -200,7 +200,7 @@ namespace TableOCR_0._2
             if (height > width)
             {
                 double ratio = (double)width / (double)height;
-                int targetHeight = Screen.PrimaryScreen.Bounds.Height - 100;
+                int targetHeight = Screen.PrimaryScreen.Bounds.Height - 150;
                 int targetWidth = Convert.ToInt32(ratio * targetHeight);
                 imgTabelaOriginal = ResizeImage(imgTabelaOriginal, targetWidth, targetHeight);
             }

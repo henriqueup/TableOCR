@@ -149,6 +149,7 @@
             // trackBarTolerancia
             // 
             this.trackBarTolerancia.Location = new System.Drawing.Point(282, 12);
+            this.trackBarTolerancia.Maximum = 30;
             this.trackBarTolerancia.Name = "trackBarTolerancia";
             this.trackBarTolerancia.Size = new System.Drawing.Size(62, 45);
             this.trackBarTolerancia.TabIndex = 22;
